@@ -6,3 +6,4 @@
 #include <math.h>
 #include <stdio.h>
 #include "../Memory.h"
+#include <time.h>

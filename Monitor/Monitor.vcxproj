@@ -141,11 +141,13 @@
   <ItemGroup>
     <ClCompile Include="..\Memory.c" />
     <ClCompile Include="..\Registry.c" />
+    <ClCompile Include="..\TrabalhoSO2\utils.c" />
     <ClCompile Include="Monitor.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Memory.h" />
     <ClInclude Include="..\Registry.h" />
+    <ClInclude Include="..\TrabalhoSO2\utils.h" />
     <ClInclude Include="Monitor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

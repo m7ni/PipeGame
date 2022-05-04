@@ -7,3 +7,4 @@
 #include <io.h>
 #include "../Memory.h"
 #include "../Registry.h"
+#include "../TrabalhoSO2/utils.h"

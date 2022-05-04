@@ -24,6 +24,9 @@
     <ClCompile Include="..\Registry.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\TrabalhoSO2\utils.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Monitor.h">
@@ -33,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Registry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\TrabalhoSO2\utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

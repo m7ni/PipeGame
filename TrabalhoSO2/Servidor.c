@@ -7,15 +7,13 @@
 #include "../Memory.h"
 #include "../Registry.h"
 #include"utils.h"
-#include "synchapi.h"
-
 
 #define SIZE 200
 #define MAX_BOARDSIZE 20
 #define MAX_TIMERWATER 30
 
 typedef struct {
-	int continua;
+	DWORD continua;
 	REGISTO_DADOS registoDados; //access to data from the registry
 	MemDados memDados;			//access to data for the sharedMemory
 }THREADTEC;
@@ -39,7 +37,7 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 		_tscanf_s(TEXT("%s"), &comand, SIZE - 1);
 
 		if (wcscmp(comand, TEXT("start")) == 0) {				
-			createBoard(data->registoDados);
+			setupBoard(data->registoDados);
 
 		}else if (wcscmp(comand, TEXT("acaba")) == 0) {
 			data->continua = 0;
@@ -48,8 +46,17 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 	}
 }
 
-DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler do buffer circular os comandos do monitor
+
+DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startign the water running
 	THREADTEC* data = (THREADTEC*)param;
+
+	//todo
+
+
+}
+
+DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler do buffer circular os comandos do monitor
+	THREADCONS* data = (THREADCONS*)param;
 	TCHAR comand[SIZE];
 	DWORD aux;
 
@@ -61,7 +68,7 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 
 int _tmain(int argc, TCHAR* argv[]) {
 	HANDLE hthread[3];
-	int contThread = 0;
+	DWORD contThread = 0;
 	MemDados memDados;
 	THREADTEC estruturaThread;
 	THREADCONS threadcons;
@@ -93,8 +100,6 @@ int _tmain(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
-
-
 	threadcons.memDados = &estruturaThread.memDados;
 
 	if (!criaSinc(&memDados))
@@ -109,7 +114,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	if (!criaMapViewOfFiles(&estruturaThread.memDados)) // Criar Vistas
 		return -1;
 
-	createBoard(&memDados);
+	setupBoard(&memDados);
 
 
 	//TODO: verificar se já existe outra instancia (atravez da memoria partilhada) e criar mecs sincronização	
