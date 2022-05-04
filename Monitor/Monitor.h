@@ -1,0 +1,9 @@
+#pragma once
+#include <windows.h>
+#include <tchar.h>
+#include <math.h>
+#include <stdio.h>
+#include <fcntl.h> 
+#include <io.h>
+#include "../Memory.h"
+#include "../Registry.h"

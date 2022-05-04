@@ -1,8 +1,5 @@
-#ifndef REGISTO_H
-#define REGISTO_H
-
-#define MAX_BOARDSIZE 20
-#define MAX_TIMERWATER 30
+#ifndef REGISTRY_H
+#define REGISTRY_H
 
 typedef struct {
 	int actualSize;
@@ -13,4 +10,4 @@ typedef struct {
 
 int verificaChave(REGISTO_DADOS* pdados);
 
-#endif /*REGISTO_H*/
+#endif /*REGISTRY_H*/

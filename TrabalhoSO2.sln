@@ -3,16 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31727.386
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TrabalhoSO2", "TrabalhoSO2\TrabalhoSO2.vcxproj", "{C39A372D-4B7B-4B5B-AC7E-466AA630F927}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Servidor", "TrabalhoSO2\TrabalhoSO2.vcxproj", "{C39A372D-4B7B-4B5B-AC7E-466AA630F927}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Monitor", "Monitor\Monitor.vcxproj", "{DD4C597A-557C-4342-BFCB-01CAC231BB19}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A90DBA9A-6014-46FE-888B-16F0B96F7AF5}"
 	ProjectSection(SolutionItems) = preProject
-		memoria.c = memoria.c
-		memoria.h = memoria.h
-		registo.c = registo.c
-		registo.h = registo.h
+		Memory.c = Memory.c
+		Memory.h = Memory.h
+		Registry.c = Registry.c
+		Registry.h = Registry.h
+		Servidor.h = Servidor.h
 	EndProjectSection
 EndProject
 Global
