@@ -6,4 +6,3 @@
 #include <math.h>
 #include <stdio.h>
 #include "../Memory.h"
-#include "../Registry.h"

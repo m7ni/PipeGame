@@ -66,7 +66,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	THREADTEC estruturaThread;
 	THREADCONS threadcons;
 	estruturaThread.continua = 1;
-
+	Board board;
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
@@ -84,12 +84,16 @@ int _tmain(int argc, TCHAR* argv[]) {
 		}
 	}
 
+	estruturaThread.memDados.VBoard->actualSize = estruturaThread.registoDados.actualSize;
+
 	//Cheking if this is the first instance of Servidor
 	if (abreFileMap(&estruturaThread.memDados)) {
 		_ftprintf(stderr, TEXT("A Servidor is already open. Closing...\n"));
 	
 		return -1;
 	}
+
+
 
 	threadcons.memDados = &estruturaThread.memDados;
 
@@ -104,6 +108,9 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	if (!criaMapViewOfFiles(&estruturaThread.memDados)) // Criar Vistas
 		return -1;
+
+	createBoard(&memDados);
+
 
 	//TODO: verificar se já existe outra instancia (atravez da memoria partilhada) e criar mecs sincronização	
 	if ((hthread[contThread++] = CreateThread(NULL, 0, Threadkeyboard, &threadcons, 0, NULL)) == NULL) // Thread responsible for the keyboard
