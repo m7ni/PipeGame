@@ -1,8 +1,9 @@
 #include "Memory.h"
 
 BOOL abreFileMap(MemDados* dados) {
-    dados->FileMapBoard = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, TRUE, FICH_MEM_P_B);
     dados->FileBufCircular = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, TRUE, FICH_MEM_P_A);
+    dados->FileMapBoard = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, TRUE, FICH_MEM_P_B);
+
 
     if (dados->FileMapBoard == NULL || dados->FileBufCircular == NULL)
         return FALSE;
@@ -38,7 +39,7 @@ BOOL criaSincBuffer(MemDados * sem) {
     sem->semMonitor = CreateSemaphore(NULL, TAM, TAM, SEMAFORO_BUFFER_M);//escrita
     sem->semServer = CreateSemaphore(NULL, 0, TAM, SEMAFORO_BUFFER_S);     //leitura
     sem->mutexSEM = CreateMutex(NULL, FALSE, BUFFER_MUTEX);
-
+    sem->mutexBoard = CreateMutex(NULL, FALSE, BOARD_MUTEX);
     if (sem->semMonitor == NULL || sem->semServer == NULL || sem->mutexSEM == NULL) {
         _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
         return FALSE;
@@ -46,19 +47,33 @@ BOOL criaSincBuffer(MemDados * sem) {
     return TRUE;
 }
 
-BOOL criaSincGeral(Sinc* sem, DWORD origin ) {
+BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
    
-    sem->timerStartEvent =CreateEvent(NULL,
-        TRUE,
-        FALSE,
-        TIMER_START_EVENT); //Waitable timer for the water to start running
+    if (origin == 1) { //only the server need this handles
 
-    sem->pauseResumeEvent = CreateEvent(NULL,
-        TRUE,
-        FALSE,
-        TIMER_START_EVENT);
+        sinc->timerStartEvent = CreateEvent(NULL,
+            TRUE,
+            FALSE,
+            TIMER_START_EVENT);
 
-    if (sem->timerStartEvent == NULL ) {
+        sinc->pauseResumeEvent = CreateEvent(NULL,
+            TRUE,
+            TRUE,
+            PAUSE_RESUME_EVENT);
+
+        /*
+        sinc->pauseMonitorComand = CreateWaitableTimer(NULL,
+            TRUE,
+            PAUSE_MONITOR_COMAND);
+            */
+    }
+
+    sinc->printBoard= CreateEvent(NULL,
+        FALSE,
+        FALSE,
+        EVENT_BOARD);
+
+    if (sinc->timerStartEvent == NULL   ) {
         _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
         return FALSE;
     }

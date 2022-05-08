@@ -10,8 +10,8 @@ typedef struct {
 	char board[20][20];
 	int actualSize;		//actual size that we are playing
 	char pecas[6];		//array that hold the available pieces;
-	//falta pensar como guardar a solução
 }Board;
+
 
 // 9473  ━
 // 9475  ┃

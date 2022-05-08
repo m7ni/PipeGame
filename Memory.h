@@ -27,8 +27,10 @@
 
 #define TIMER_START_EVENT TEXT("TIMER_START_EVENT")
 #define PAUSE_RESUME_EVENT TEXT("PAUSE_RESUME_EVENT")
+#define PAUSE_MONITOR_COMAND TEXT("PAUSE_MONITOR_COMAND")
 
-#define MUTEX TEXT("MUTEX")
+#define BOARD_MUTEX TEXT("BOARD_MUTEX")
+#define EVENT_BOARD TEXT("EVENT_BOARD")
 
 typedef struct { //Ainda não sei bem para que é que vai ser preciso (Neste momento é para passar os comandos atravez de int)
 	unsigned int code; //Passar comandos MONITOR -> SERVIDOR
@@ -51,6 +53,7 @@ typedef struct {
 	HANDLE semServer;					// Semáforo para indicar que o monitor pode escrever
 	HANDLE mutexSEM;						// Mutex para garantir acesso único ao buffer circular
 
+	HANDLE mutexBoard; //Mutex to control the access to the board shared memory
 	LPHANDLE FileMapBoard;			// File Map para a struct Board
 	Board* VBoard;			// Vista para a struct Board
 } MemDados;
@@ -59,6 +62,9 @@ typedef struct {
 typedef struct {
 	HANDLE timerStartEvent; //water starts running 
 	HANDLE pauseResumeEvent; //Server comand
+	HANDLE pauseMonitorComand; //waitable timer to stop the water for x seconds
+	HANDLE printBoard; //Event that informs the monitor to print the board
+	
 } Sinc;
 
 BOOL abreFileMap(MemDados* dados);
@@ -67,7 +73,7 @@ BOOL fechaHandleMem(MemDados* dados);
 BOOL fechaViewFile(MemDados* dados);
 BOOL criaSincBuffer( MemDados* sem);
 BOOL criaMapViewOfFiles(MemDados* dados);
-
+BOOL criaSincGeral(Sinc* sinc, DWORD origin);
 #endif /*MEMORY_H*/
 
 

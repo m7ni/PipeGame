@@ -6,23 +6,24 @@ LARGE_INTEGER intToLargeInt(int i) {
 	return li;
 }
 
-void setupBoard(MemDados* dados) {
+void setupBoard(MemDados* data, DWORD actualSize) {
 	srand(time(NULL));
 	BOOL goUp = NULL;
+	Board aux;
+	aux.actualSize = actualSize;
 
-
-	for (DWORD i = 0; i < dados->VBoard->actualSize; i++) {
-		for (DWORD j = 0; j < dados->VBoard->actualSize; j++)
+	for (DWORD i = 0; i < aux.actualSize; i++) {
+		for (DWORD j = 0; j < aux.actualSize; j++)
 		{
-			dados->VBoard->board[i][j] = '.';
+			data->VBoard->board[i][j] = '.';
 		}
 	}
 
-	DWORD lineBegin = rand() % dados->VBoard->actualSize;
-	DWORD lineEnd = rand() % dados->VBoard->actualSize;
+	DWORD lineBegin = rand() % aux.actualSize;
+	DWORD lineEnd = rand() % aux.actualSize;
 
-	dados->VBoard->board[lineBegin][0] = 'B'; //begin position
-	dados->VBoard->board[lineEnd][dados->VBoard->actualSize-1] = 'E'; //end position
+	data->VBoard->board[lineBegin][0] = 'B'; //begin position
+	data->VBoard->board[lineEnd][aux.actualSize-1] = 'E'; //end position
 
 	if (lineEnd > lineBegin) //temos que ir para baixo quando chegar ao lado direito da tabela
 		goUp = FALSE;
@@ -30,24 +31,23 @@ void setupBoard(MemDados* dados) {
 		goUp = TRUE;
 									//goUP é null, por isso só temos que chegar ao lado direito do board e estamos na pos final
 
-
-	for (DWORD j = 1; j < dados->VBoard->actualSize - 2; j++) {
-		dados->VBoard->board[lineBegin][j] = '━';
+	for (DWORD j = 1; j < aux.actualSize - 2; j++) {
+		data->VBoard->board[lineBegin][j] = '━';
 	}
 
 	switch (goUp) {
 	case TRUE:
-		dados->VBoard->board[lineBegin][dados->VBoard->actualSize - 1] = '┛';
+		aux.board[lineBegin][aux.actualSize - 1] = '┛';
 
 		for (DWORD i = lineBegin - 1; i > lineEnd; i--) {
-			dados->VBoard->board[i][dados->VBoard->actualSize - 1] = '┃';
+			aux.board[i][aux.actualSize - 1] = '┃';
 		}
 		break;
 	case FALSE:
-		dados->VBoard->board[lineBegin][dados->VBoard->actualSize - 1] = '┓';
+		aux.board[lineBegin][aux.actualSize - 1] = '┓';
 
 		for (DWORD i = lineBegin; i < lineEnd; i++) {
-			dados->VBoard->board[i][dados->VBoard->actualSize - 1] = '┃';
+			aux.board[i][aux.actualSize - 1] = '┃';
 		}
 
 		break;
@@ -55,21 +55,28 @@ void setupBoard(MemDados* dados) {
 		break;
 	}
 
-	dados->VBoard->pecas[0] = '━';
-	dados->VBoard->pecas[1] = '┃';
-	dados->VBoard->pecas[2] = '┏';
-	dados->VBoard->pecas[3] = '━';
-	dados->VBoard->pecas[4] = '┛';
-	dados->VBoard->pecas[5] = '┗';
+	aux.pecas[0] = '━';
+	aux.pecas[1] = '┃';
+	aux.pecas[2] = '┏';
+	aux.pecas[3] = '━';
+	aux.pecas[4] = '┛';
+	aux.pecas[5] = '┗';
 
+	WaitForSingleObject(data->mutexBoard, INFINITE);
+	CopyMemory(&data->VBoard,&aux, sizeof(Board));
+	ReleaseMutex(data->mutexBoard);
 }
 
-void printBoard(MemDados* dados) {
-	for (DWORD i = 0; i < dados->VBoard->actualSize; i++) {
+void printBoard(Board*aux) {
+	for (DWORD i = 0; i < aux->actualSize; i++) {
 		printf("\n");
-		for (DWORD j = 0; j < dados->VBoard->actualSize; j++)
+		for (DWORD j = 0; j < aux->actualSize; j++)
 		{
-			printf("%c",dados->VBoard->board[i][j]);
+			printf("%c", aux->board[i][j]);
 		}
 	}
+}
+
+BOOL waterRunning(MemDados* dados) {
+
 }

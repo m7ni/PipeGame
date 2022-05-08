@@ -6,16 +6,20 @@
 typedef struct {
 	DWORD continua;
 	MemDados* memDados;			//access to data for the sharedMemory
+	Sinc* sinc;
 }THREADTEC;
 
 typedef struct { //thread thats responsible for showing the board
 	DWORD continua;
+	Sinc* sinc;
+	MemDados* memDados;			//access to data for the sharedMemory
 }THREADPRINT;
 
 DWORD WINAPI Threadkeyboard(LPVOID param) {
 	THREADTEC* data = (THREADTEC*)param;
 	TCHAR comand[SIZE];
 	Comand aux;
+	
 
 	aux.code = 0;
 	_ftprintf(stderr, TEXT("ThreadKeyboard Started\n"));
@@ -26,6 +30,10 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 
 		if (wcscmp(comand, TEXT("stop-water")) == 0) {
 			_ftprintf(stderr, TEXT("--stop-water inserted--\n"));
+			_ftprintf(stdout, TEXT("seconds: "));
+			_tscanf_s(TEXT("%d"), &aux.time, sizeof(unsigned int));
+
+		
 			aux.code = 1;
 		}
 		else if (wcscmp(comand, TEXT("insert-block")) == 0) {
@@ -52,9 +60,20 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 
 DWORD WINAPI ThreadPrintBoard(LPVOID param) {
 	THREADPRINT* data = (THREADPRINT*)param;
+	Board aux;
+	_ftprintf(stderr, TEXT("ThreadPrintBoard Started\n"));
 	while (data->continua)
 	{
-		//TODO:
+		WaitForSingleObject(data->sinc->printBoard,INFINITE); //Event
+
+		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
+		CopyMemory(&aux,&data->memDados->VBoard, sizeof(Board));
+		ReleaseMutex(data->memDados->mutexBoard);
+
+		_ftprintf(stderr, TEXT("evento print\n"));
+		Sleep(3000);
+		printBoard(&aux);
+	
 	}
 }
 
@@ -64,7 +83,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	MemDados memDados;
 	THREADTEC threadtec;
 	THREADPRINT threadprint;
-
+	Sinc sinc;
 	if (!abreFileMap(&memDados))
 	{
 		_ftprintf(stderr, TEXT("There is no Servidor open! Try later...\n"));
@@ -74,12 +93,17 @@ int _tmain(int argc, TCHAR* argv[]) {
 	if (!criaSincBuffer(&memDados))
 		return -1;
 
+	if (!criaSincGeral(&sinc, 0)) // Criar Vistas
+		return -1;
 	
 	if (!criaMapViewOfFiles(&memDados)) //creating map views
 		return -1;
 
+	threadtec.sinc = &sinc;
+	threadprint.sinc = &sinc;
 	threadtec.continua = 1;
 	threadtec.memDados = &memDados;
+	threadprint.memDados = &memDados;
 
 	if (argc != 1)
 	{
@@ -90,6 +114,12 @@ int _tmain(int argc, TCHAR* argv[]) {
 	if ((hthread[contThread++] = CreateThread(NULL, 0, Threadkeyboard, &threadtec, 0, NULL)) == NULL) // Thread responsible for the keyboard
 	{
 		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Monitor input\n"));
+		return -1;
+	}
+
+	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadPrintBoard, &threadprint, 0, NULL)) == NULL) // Thread responsible for printing the board
+	{
+		_ftprintf(stderr, TEXT("Error creating Thread responsible for printing the Board\n"));
 		return -1;
 	}
 

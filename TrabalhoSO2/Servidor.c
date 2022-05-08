@@ -38,13 +38,14 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 
 		if (wcscmp(comand, TEXT("start")) == 0) {	
 			SetEvent(data->sinc->timerStartEvent);
-
+		//	CancelWaitableTimer(data->sinc->pauseMonitorComand);
 		}else if (wcscmp(comand, TEXT("acaba")) == 0) {
 			data->continua = 0;
 
 		}
 		else if (wcscmp(comand, TEXT("pause")) == 0) {
 			ResetEvent(data->sinc->pauseResumeEvent);
+			SetEvent(data->sinc->printBoard);
 		}
 		else if (wcscmp(comand, TEXT("resume")) == 0) {
 			SetEvent(data->sinc->pauseResumeEvent);
@@ -58,12 +59,16 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startig
 	THREADTEC* data = (THREADTEC*)param;
 	_ftprintf(stderr, TEXT("ThreadWaterRunning Started\n"));
 	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
-	Sleep(0); //data->registoDados.actualTime*1000 <- Meter isto quandos e entregar
+	Sleep(0); //data->registoDados.actualTime*1000 <- Meter isto quando se entregar
 	while (1) {
 		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
 		_ftprintf(stderr, TEXT("\nsashimi de crica\n"));
 		Sleep(3000);
 
+
+
+		//SetEvent(data->sinc->printBoard); usar quando queremos avisar o monitor que pode imprimir
+		//WaitForSingleObject(data->sinc->pauseMonitorComand, INFINITE); //TODO: perguntar ao stor como é que isto funciona 
 	}
 	
 }
@@ -72,6 +77,7 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 	THREADCONS* data = (THREADCONS*)param;
 	TCHAR comand[SIZE];
 	Comand aux;
+	LARGE_INTEGER liDueTime;
 	_ftprintf(stderr, TEXT("ThreadComandsMonitor Started\n"));
 	while (data->continua)
 	{
@@ -85,7 +91,9 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 		ReleaseSemaphore(data->memDados->semMonitor, 1, NULL);
 		switch (aux.code) {
 		case 1 :
-			//TODO
+
+			liDueTime.QuadPart = -100000000LL;
+			SetWaitableTimer(data->sinc->pauseMonitorComand, &liDueTime, 0, NULL, NULL, 0);
 			break;
 
 		case 2:
@@ -139,17 +147,20 @@ int _tmain(int argc, TCHAR* argv[]) {
 	if (!criaMapViewOfFiles(&KB.memDados)) // Criar Vistas
 		return -1;
 
-	if (!criaSincGeral(&sinc,1)) // Criar Vistas
+	if (!criaSincGeral(&sinc, 1)) // Criar Vistas
 		return -1;
 	
+
 	KB.sinc = &sinc;
+	CONSUMER.sinc = &sinc;
 	KB.memDados.semMonitor = sem.semMonitor;
 	KB.memDados.semServer = sem.semServer;
 	KB.memDados.mutexSEM = sem.mutexSEM;
 	KB.memDados.VBufCircular->in = 0;
 	KB.memDados.VBufCircular->out = 0;
 	KB.memDados.VBoard->actualSize = KB.registoDados.actualSize;
-	setupBoard(&KB.memDados);
+
+	setupBoard(&KB.memDados,KB.registoDados.actualSize);
 
 
 	CONSUMER.memDados = &KB.memDados;
