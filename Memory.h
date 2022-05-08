@@ -9,11 +9,11 @@
 #include <stdio.h>
 #include "Registry.h"
 #include "Servidor.h"
-
+#include "WinBase.h"
 
 #define BUFFERSIZE 255
 #define MAX 20
-#define TAM 5
+#define TAM 3
 #define TAM_COMAND 100
 
 #define FICH_MEM_P_A TEXT("memoriaPartilhadaA")
@@ -25,12 +25,22 @@
 
 #define BOARD_MUTEX TEXT("BOARD_MUTEX")
 
+#define TIMER_START_EVENT TEXT("TIMER_START_EVENT")
+#define PAUSE_RESUME_EVENT TEXT("PAUSE_RESUME_EVENT")
+
 #define MUTEX TEXT("MUTEX")
 
 typedef struct { //Ainda não sei bem para que é que vai ser preciso (Neste momento é para passar os comandos atravez de int)
-	int UserComands[TAM]; //Passar comandos MONITOR -> SERVIDOR
-	int in;					// Posição de escrita no buffer circular
-	int out;				// Posição de leitura no buffer circular
+	unsigned int code; //Passar comandos MONITOR -> SERVIDOR
+	unsigned int time; 
+} Comand;
+
+
+
+typedef struct { //Ainda não sei bem para que é que vai ser preciso (Neste momento é para passar os comandos atravez de int)
+	Comand UserComands[TAM]; //Passar comandos MONITOR -> SERVIDOR
+	unsigned int in;					// Posição de escrita no buffer circular
+	unsigned int out;				// Posição de leitura no buffer circular
 } BufferCircular;
 
 
@@ -45,17 +55,17 @@ typedef struct {
 	Board* VBoard;			// Vista para a struct Board
 } MemDados;
 
-/*
-typedef struct {
-	HANDLE mutexBOARD; //mutex for reading and altering the board purposes
 
+typedef struct {
+	HANDLE timerStartEvent; //water starts running 
+	HANDLE pauseResumeEvent; //Server comand
 } Sinc;
-*/
+
 BOOL abreFileMap(MemDados* dados);
 BOOL criaFileMap(MemDados* dados);
 BOOL fechaHandleMem(MemDados* dados);
 BOOL fechaViewFile(MemDados* dados);
-BOOL criaSinc( MemDados* sem);
+BOOL criaSincBuffer( MemDados* sem);
 BOOL criaMapViewOfFiles(MemDados* dados);
 
 #endif /*MEMORY_H*/

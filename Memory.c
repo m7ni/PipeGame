@@ -1,8 +1,8 @@
 #include "Memory.h"
 
 BOOL abreFileMap(MemDados* dados) {
-    dados->FileMapBoard = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, TRUE, FICH_MEM_P_A);
-    dados->FileBufCircular = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, TRUE, FICH_MEM_P_B);
+    dados->FileMapBoard = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, TRUE, FICH_MEM_P_B);
+    dados->FileBufCircular = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, TRUE, FICH_MEM_P_A);
 
     if (dados->FileMapBoard == NULL || dados->FileBufCircular == NULL)
         return FALSE;
@@ -34,13 +34,31 @@ BOOL fechaViewFile(MemDados* dados) {
     return UnmapViewOfFile(dados->VBoard) && UnmapViewOfFile(dados->VBufCircular);
 }
 
-BOOL criaSinc(MemDados * sem) {
-    //dados->mutexBoard = CreateMutex(NULL, FALSE, MUTEX_BOARD);
+BOOL criaSincBuffer(MemDados * sem) {
     sem->semMonitor = CreateSemaphore(NULL, TAM, TAM, SEMAFORO_BUFFER_M);//escrita
-    sem->semServer = CreateSemaphore(NULL, 0, 1, SEMAFORO_BUFFER_S);     //leitura
-    sem->mutexSEM = CreateMutex(NULL, FALSE, MUTEX);
+    sem->semServer = CreateSemaphore(NULL, 0, TAM, SEMAFORO_BUFFER_S);     //leitura
+    sem->mutexSEM = CreateMutex(NULL, FALSE, BUFFER_MUTEX);
 
     if (sem->semMonitor == NULL || sem->semServer == NULL || sem->mutexSEM == NULL) {
+        _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
+        return FALSE;
+    }
+    return TRUE;
+}
+
+BOOL criaSincGeral(Sinc* sem, DWORD origin ) {
+   
+    sem->timerStartEvent =CreateEvent(NULL,
+        TRUE,
+        FALSE,
+        TIMER_START_EVENT); //Waitable timer for the water to start running
+
+    sem->pauseResumeEvent = CreateEvent(NULL,
+        TRUE,
+        FALSE,
+        TIMER_START_EVENT);
+
+    if (sem->timerStartEvent == NULL ) {
         _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
         return FALSE;
     }
@@ -55,7 +73,7 @@ BOOL criaMapViewOfFiles(MemDados* dados) {
     }
 
     // =============================== Colocar o ponteiro da estrutura a apontar para a vista do buffer ===============================
-    dados->VBufCircular = (BufferCircular*)MapViewOfFile(dados->FileBufCircular, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, sizeof(BufferCircular));
+    dados->VBufCircular = (BufferCircular*)MapViewOfFile(dados->FileBufCircular, FILE_MAP_ALL_ACCESS, 0, 0, 0);
     if (dados->VBufCircular == NULL)
     {
         _ftprintf(stderr, TEXT("Error creating view to buffer FileMap!\n"));

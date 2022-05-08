@@ -16,64 +16,97 @@ typedef struct {
 	DWORD continua;
 	REGISTO_DADOS registoDados; //access to data from the registry
 	MemDados memDados;			//access to data for the sharedMemory
+	Sinc* sinc;
 }THREADTEC;
 
 
 typedef struct {
+	Sinc* sinc;
 	int continua;
 	MemDados* memDados;			//access to data for the sharedMemory
-
-	//Sinc* sinc;
 }THREADCONS, * PTHREADCONS;
 
 DWORD WINAPI Threadkeyboard(LPVOID param) {
 	THREADTEC* data = (THREADTEC*)param;
 	TCHAR comand[SIZE];
 	DWORD aux;
-
+	_ftprintf(stderr, TEXT("ThreadKeyboard Started\n"));
 	while (data->continua)
 	{
 		_ftprintf(stdout, TEXT("Comand: "));
 		_tscanf_s(TEXT("%s"), &comand, SIZE - 1);
 
-		if (wcscmp(comand, TEXT("start")) == 0) {				
-			setupBoard(data->registoDados);
+		if (wcscmp(comand, TEXT("start")) == 0) {	
+			SetEvent(data->sinc->timerStartEvent);
 
 		}else if (wcscmp(comand, TEXT("acaba")) == 0) {
 			data->continua = 0;
 
 		}
+		else if (wcscmp(comand, TEXT("pause")) == 0) {
+			ResetEvent(data->sinc->pauseResumeEvent);
+		}
+		else if (wcscmp(comand, TEXT("resume")) == 0) {
+			SetEvent(data->sinc->pauseResumeEvent);
+		}
 	}
+	_ftprintf(stderr, TEXT("ThreadKeyboard Ended\n"));
 }
 
 
 DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startign the water running
 	THREADTEC* data = (THREADTEC*)param;
+	_ftprintf(stderr, TEXT("ThreadWaterRunning Started\n"));
+	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
+	Sleep(0); //data->registoDados.actualTime*1000 <- Meter isto quandos e entregar
+	while (1) {
+		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
+		_ftprintf(stderr, TEXT("\nsashimi de crica\n"));
+		Sleep(3000);
 
-	//todo
-
-
+	}
+	
 }
 
 DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler do buffer circular os comandos do monitor
 	THREADCONS* data = (THREADCONS*)param;
 	TCHAR comand[SIZE];
-	DWORD aux;
-
+	Comand aux;
+	_ftprintf(stderr, TEXT("ThreadComandsMonitor Started\n"));
 	while (data->continua)
 	{
-		//TODO
+		WaitForSingleObject(data->memDados->semServer, INFINITE);
+		WaitForSingleObject(data->memDados->mutexSEM, INFINITE);
+
+		CopyMemory(&aux, &data->memDados->VBufCircular->UserComands[data->memDados->VBufCircular->out], sizeof(Comand));
+		data->memDados->VBufCircular->out = (data->memDados->VBufCircular->out + 1) % TAM;
+	
+		ReleaseMutex(data->memDados->mutexSEM);
+		ReleaseSemaphore(data->memDados->semMonitor, 1, NULL);
+		switch (aux.code) {
+		case 1 :
+			//TODO
+			break;
+
+		case 2:
+			//TODO
+			break;
+		}
+		
 	}
+	_ftprintf(stderr, TEXT("ThreadComandsMonitor Ended\n"));
 }
 
 int _tmain(int argc, TCHAR* argv[]) {
 	HANDLE hthread[3];
 	DWORD contThread = 0;
-	MemDados memDados;
-	THREADTEC estruturaThread;
-	THREADCONS threadcons;
-	estruturaThread.continua = 1;
+	MemDados sem;
+	THREADTEC KB;
+	THREADCONS CONSUMER;
+	KB.continua = 1;
+	CONSUMER.continua = 1;
 	Board board;
+	Sinc sinc;
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
@@ -82,61 +115,68 @@ int _tmain(int argc, TCHAR* argv[]) {
 	
 	if (argc != 3) //user doesn't define inital values, so we go to registry to obtain them
 	{
-		verificaChave(&estruturaThread.registoDados);
+		verificaChave(&KB.registoDados);
 	}
-	else if ((estruturaThread.registoDados.actualSize = _ttoi(argv[1])) <= 0 && (estruturaThread.registoDados.actualTime = _ttoi(argv[2])) <= 0) { //user defines initial values 
-		if (estruturaThread.registoDados.actualSize > MAX_BOARDSIZE || estruturaThread.registoDados.actualTime > MAX_TIMERWATER) {
+	else if ((KB.registoDados.actualSize = _ttoi(argv[1])) <= 0 && (KB.registoDados.actualTime = _ttoi(argv[2])) <= 0) { //user defines initial values 
+		if (KB.registoDados.actualSize > MAX_BOARDSIZE || KB.registoDados.actualTime > MAX_TIMERWATER) {
 			_ftprintf(stdout, TEXT("Size of the Board or Time invalid <MAX Board 20> <MAX time 30>!\n"));
 			return -1;
 		}
 	}
 
-	estruturaThread.memDados.VBoard->actualSize = estruturaThread.registoDados.actualSize;
-
 	//Cheking if this is the first instance of Servidor
-	if (abreFileMap(&estruturaThread.memDados)) {
+	if (abreFileMap(&KB.memDados)) {
 		_ftprintf(stderr, TEXT("A Servidor is already open. Closing...\n"));
-	
 		return -1;
 	}
 
-	threadcons.memDados = &estruturaThread.memDados;
-
-	if (!criaSinc(&memDados))
+	if (!criaSincBuffer(&sem))
 		return -1;
 
-	threadcons.memDados->semMonitor = memDados.semMonitor;
-
-
-	if (!criaFileMap(&estruturaThread.memDados)) // Criar FileMaps
+	if (!criaFileMap(&KB.memDados)) // Criar FileMaps
 		return -1;
 
-	if (!criaMapViewOfFiles(&estruturaThread.memDados)) // Criar Vistas
+	if (!criaMapViewOfFiles(&KB.memDados)) // Criar Vistas
 		return -1;
 
-	setupBoard(&memDados);
+	if (!criaSincGeral(&sinc,1)) // Criar Vistas
+		return -1;
+	
+	KB.sinc = &sinc;
+	KB.memDados.semMonitor = sem.semMonitor;
+	KB.memDados.semServer = sem.semServer;
+	KB.memDados.mutexSEM = sem.mutexSEM;
+	KB.memDados.VBufCircular->in = 0;
+	KB.memDados.VBufCircular->out = 0;
+	KB.memDados.VBoard->actualSize = KB.registoDados.actualSize;
+	setupBoard(&KB.memDados);
 
 
-	//TODO: verificar se já existe outra instancia (atravez da memoria partilhada) e criar mecs sincronização	
-	if ((hthread[contThread++] = CreateThread(NULL, 0, Threadkeyboard, &threadcons, 0, NULL)) == NULL) // Thread responsible for the keyboard
+	CONSUMER.memDados = &KB.memDados;
+	if ((hthread[contThread++] = CreateThread(NULL, 0, Threadkeyboard, &KB, 0, NULL)) == NULL) // Thread responsible for the keyboard
 	{
-		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Monitor input\n"));
+		_ftprintf(stderr, TEXT("Error creating Thread responsible for the keyboard\n"));
 		return -1;
 	}
 
 
 	// Thread responsible for handling monitor input
-	/*
-	if ((hthread[contThread++] = CreateThread(NULL, 0, Threadkeyboard, &estruturaThread, 0, NULL)) == NULL) 
+	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadComandsMonitor, &CONSUMER, 0, NULL)) == NULL)
 	{
-		_ftprintf(stderr, TEXT("Error creating Thread responsible for the keyboard\n"));
+		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Monitor input\n"));
 		return -1;
 	}
-	*/
+
+	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &KB, 0, NULL)) == NULL)
+	{
+		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Monitor input\n"));
+		return -1;
+	}
+	
 
 	WaitForMultipleObjects(contThread, hthread, TRUE, INFINITE);
-	fechaViewFile(&estruturaThread.memDados);
-	fechaHandleMem(&estruturaThread.memDados);
+	fechaViewFile(&KB.memDados);
+	fechaHandleMem(&KB.memDados);
 }
 
 

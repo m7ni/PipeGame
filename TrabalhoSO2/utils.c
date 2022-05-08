@@ -1,6 +1,10 @@
 ﻿#include "utils.h"
 
-
+LARGE_INTEGER intToLargeInt(int i) {
+	LARGE_INTEGER li;
+	li.QuadPart = i;
+	return li;
+}
 
 void setupBoard(MemDados* dados) {
 	srand(time(NULL));

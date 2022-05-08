@@ -7,3 +7,8 @@
 #include <stdio.h>
 #include "../Memory.h"
 #include <time.h>
+
+
+LARGE_INTEGER intToLargeInt(int i);
+void setupBoard(MemDados* dados);
+void printBoard(MemDados* dados);
