@@ -18,12 +18,12 @@ void setupBoard(MemDados* data, DWORD actualSize) {
 			data->VBoard->board[i][j] = '.';
 		}
 	}
-
+	
 	DWORD lineBegin = rand() % aux.actualSize;
 	DWORD lineEnd = rand() % aux.actualSize;
 
-	data->VBoard->board[lineBegin][0] = 'B'; //begin position
-	data->VBoard->board[lineEnd][aux.actualSize-1] = 'E'; //end position
+	aux.board[lineBegin][0] = 'B'; //begin position
+	aux.board[lineEnd][aux.actualSize-1] = 'E'; //end position
 
 	if (lineEnd > lineBegin) //temos que ir para baixo quando chegar ao lado direito da tabela
 		goUp = FALSE;
@@ -32,7 +32,7 @@ void setupBoard(MemDados* data, DWORD actualSize) {
 									//goUP é null, por isso só temos que chegar ao lado direito do board e estamos na pos final
 
 	for (DWORD j = 1; j < aux.actualSize - 2; j++) {
-		data->VBoard->board[lineBegin][j] = '━';
+		aux.board[lineBegin][j] = '━';
 	}
 
 	switch (goUp) {
@@ -62,9 +62,9 @@ void setupBoard(MemDados* data, DWORD actualSize) {
 	aux.pecas[4] = '┛';
 	aux.pecas[5] = '┗';
 
-	WaitForSingleObject(data->mutexBoard, INFINITE);
+	/*WaitForSingleObject(data->mutexBoard, INFINITE);
 	CopyMemory(&data->VBoard,&aux, sizeof(Board));
-	ReleaseMutex(data->mutexBoard);
+	ReleaseMutex(data->mutexBoard);*/
 }
 
 void printBoard(Board* aux) {

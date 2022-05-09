@@ -142,7 +142,6 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 		_tscanf_s(TEXT("%s"), &comand, SIZE - 1);
 
 		if (wcscmp(comand, TEXT("start")) == 0) {
-
 			SetEvent(data->sinc->timerStartEvent);
 			//	CancelWaitableTimer(data->sinc->pauseMonitorComand);
 		}
@@ -166,10 +165,10 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startign the water running
 	PTHREADTEC data = (PTHREADTEC)param;
 	_ftprintf(stderr, TEXT("ThreadWaterRunning Started\n"));
-	WaitForSingleObject(data->sinc->t imerStartEvent, INFINITE); //Comand Start
+	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
 	Sleep(0); //data->registoDados.actualTime*1000 <- Meter isto quando se entregar
 	while (1) {
-		//WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
+		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
 		_ftprintf(stderr, TEXT("\nsashimi de crica\n"));
 		Sleep(3000);
 
