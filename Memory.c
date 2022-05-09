@@ -36,7 +36,7 @@ BOOL fechaViewFile(MemDados* dados) {
 }
 
 BOOL criaSincBuffer(MemDados * sem) {
-    sem->semMonitor = CreateSemaphore(NULL, TAM, TAM, SEMAFORO_BUFFER_M);//escrita
+    sem->semMonitor = CreateSemaphore(NULL, TAM, TAM, SEMAFORO_BUFFER_M);  //escrita
     sem->semServer = CreateSemaphore(NULL, 0, TAM, SEMAFORO_BUFFER_S);     //leitura
     sem->mutexSEM = CreateMutex(NULL, FALSE, BUFFER_MUTEX);
     sem->mutexBoard = CreateMutex(NULL, FALSE, BOARD_MUTEX);

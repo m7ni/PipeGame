@@ -69,10 +69,10 @@ DWORD WINAPI ThreadPrintBoard(LPVOID param) {
 		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
 		CopyMemory(&aux,&data->memDados->VBoard, sizeof(Board));
 		ReleaseMutex(data->memDados->mutexBoard);
-
+		printBoard(&aux);
 		_ftprintf(stderr, TEXT("evento print\n"));
 		Sleep(3000);
-		printBoard(&aux);
+		
 	
 	}
 }

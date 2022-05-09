@@ -6,10 +6,11 @@ LARGE_INTEGER intToLargeInt(int i) {
 	return li;
 }
 
-void setupBoard(MemDados* data, DWORD actualSize) {
+Board* setupBoard(MemDados* data, DWORD actualSize) {
 	srand(time(NULL));
 	BOOL goUp = NULL;
 	Board aux;
+
 	aux.actualSize = actualSize;
 
 	for (DWORD i = 0; i < aux.actualSize; i++) {
@@ -62,12 +63,13 @@ void setupBoard(MemDados* data, DWORD actualSize) {
 	aux.pecas[4] = '┛';
 	aux.pecas[5] = '┗';
 
-	/*WaitForSingleObject(data->mutexBoard, INFINITE);
-	CopyMemory(&data->VBoard,&aux, sizeof(Board));
-	ReleaseMutex(data->mutexBoard);*/
+
+	return &aux;
+	
 }
 
 void printBoard(Board* aux) {
+
 	for (DWORD i = 0; i < aux->actualSize; i++) {
 		printf("\n");
 		for (DWORD j = 0; j < aux->actualSize; j++)
