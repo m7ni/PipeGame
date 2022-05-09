@@ -62,9 +62,8 @@ typedef struct {
 typedef struct {
 	HANDLE timerStartEvent; //water starts running 
 	HANDLE pauseResumeEvent; //Server comand
-	HANDLE pauseMonitorComand; //waitable timer to stop the water for x seconds
+	//HANDLE pauseMonitorComand; //waitable timer to stop the water for x seconds
 	HANDLE printBoard; //Event that informs the monitor to print the board
-	
 } Sinc;
 
 BOOL abreFileMap(MemDados* dados);
@@ -74,6 +73,7 @@ BOOL fechaViewFile(MemDados* dados);
 BOOL criaSincBuffer( MemDados* sem);
 BOOL criaMapViewOfFiles(MemDados* dados);
 BOOL criaSincGeral(Sinc* sinc, DWORD origin);
+
 #endif /*MEMORY_H*/
 
 

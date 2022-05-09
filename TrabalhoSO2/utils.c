@@ -67,7 +67,7 @@ void setupBoard(MemDados* data, DWORD actualSize) {
 	ReleaseMutex(data->mutexBoard);
 }
 
-void printBoard(Board*aux) {
+void printBoard(Board* aux) {
 	for (DWORD i = 0; i < aux->actualSize; i++) {
 		printf("\n");
 		for (DWORD j = 0; j < aux->actualSize; j++)
@@ -77,6 +77,3 @@ void printBoard(Board*aux) {
 	}
 }
 
-BOOL waterRunning(MemDados* dados) {
-
-}

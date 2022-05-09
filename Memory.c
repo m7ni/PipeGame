@@ -40,7 +40,7 @@ BOOL criaSincBuffer(MemDados * sem) {
     sem->semServer = CreateSemaphore(NULL, 0, TAM, SEMAFORO_BUFFER_S);     //leitura
     sem->mutexSEM = CreateMutex(NULL, FALSE, BUFFER_MUTEX);
     sem->mutexBoard = CreateMutex(NULL, FALSE, BOARD_MUTEX);
-    if (sem->semMonitor == NULL || sem->semServer == NULL || sem->mutexSEM == NULL) {
+    if (sem->semMonitor == NULL || sem->semServer == NULL || sem->mutexSEM == NULL || sem->mutexBoard == NULL) {
         _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
         return FALSE;
     }
@@ -66,6 +66,11 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
             TRUE,
             PAUSE_MONITOR_COMAND);
             */
+
+        if (sinc->timerStartEvent == NULL || sinc->pauseResumeEvent == NULL) {
+            _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
+            return FALSE;
+        }
     }
 
     sinc->printBoard= CreateEvent(NULL,
@@ -73,7 +78,7 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
         FALSE,
         EVENT_BOARD);
 
-    if (sinc->timerStartEvent == NULL   ) {
+    if (sinc->printBoard == NULL   ) {
         _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
         return FALSE;
     }

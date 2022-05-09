@@ -10,5 +10,5 @@
 
 
 LARGE_INTEGER intToLargeInt(int i);
-void setupBoard(MemDados* dados);
+void setupBoard(MemDados* data, DWORD actualSize);
 void printBoard(MemDados* dados);

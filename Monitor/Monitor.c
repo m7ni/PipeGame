@@ -93,7 +93,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	if (!criaSincBuffer(&memDados))
 		return -1;
 
-	if (!criaSincGeral(&sinc, 0)) // Criar Vistas
+	if (!criaSincGeral(&sinc, 0)) 
 		return -1;
 	
 	if (!criaMapViewOfFiles(&memDados)) //creating map views
