@@ -96,6 +96,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 	KB.memDados.semMonitor = sem.semMonitor;
 	KB.memDados.semServer = sem.semServer;
 	KB.memDados.mutexSEM = sem.mutexSEM;
+	KB.memDados.flagMonitorComand = 0;
+	KB.memDados.timeMonitorComand = 0;
 	KB.memDados.VBufCircular->in = 0;
 	KB.memDados.VBufCircular->out = 0;
 	KB.memDados.VBoard->actualSize = KB.registoDados.actualSize;
@@ -160,17 +162,22 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 
 }
 
-
 DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startign the water running
 	PTHREADTEC data = (PTHREADTEC)param;
 	_ftprintf(stderr, TEXT("ThreadWaterRunning Started\n"));
 	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
 	Sleep(0); //data->registoDados.actualTime*1000 <- Meter isto quando se entregar
 
-	while (1) {
+	while (data->continua) {
 		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
 		_ftprintf(stderr, TEXT("\nprint Thread Water running\n"));
 		Sleep(3000);
+
+
+		if (data->memDados.flagMonitorComand) {
+			Sleep(data->memDados.flagMonitorComand*1000);
+				data->memDados.flagMonitorComand = 0;
+		}
 
 		/*WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
 		CopyMemory(&data->memDados.VBoard, &aux, sizeof(Board));
@@ -178,6 +185,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startig
 
 
 		//SetEvent(data->sinc->printBoard); usar quando queremos avisar o monitor que pode imprimir
+		
 		//WaitForSingleObject(data->sinc->pauseMonitorComand, INFINITE); //TODO: perguntar ao stor como é que isto funciona 
 	}
 
@@ -200,9 +208,12 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 		ReleaseMutex(data->memDados->mutexSEM);
 		ReleaseSemaphore(data->memDados->semMonitor, 1, NULL);
 		switch (aux.code) {
+
 		case 1:
-			liDueTime.QuadPart = -100000000LL;
-			_ftprintf(stderr, TEXT("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"));
+
+			data->memDados->timeMonitorComand = aux.time;
+			data->memDados->flagMonitorComand = 1;
+			//liDueTime.QuadPart = -100000000LL;
 			//SetWaitableTimer(data->sinc.pauseMonitorComand, &liDueTime, 0, NULL, NULL, 0);
 			break;
 

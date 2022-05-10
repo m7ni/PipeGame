@@ -35,6 +35,7 @@
 typedef struct { //Ainda não sei bem para que é que vai ser preciso (Neste momento é para passar os comandos atravez de int)
 	unsigned int code; //Passar comandos MONITOR -> SERVIDOR
 	unsigned int time; 
+
 } Comand;
 
 
@@ -56,6 +57,9 @@ typedef struct {
 	HANDLE mutexBoard; //Mutex to control the access to the board shared memory
 	LPHANDLE FileMapBoard;			// File Map para a struct Board
 	Board* VBoard;			// Vista para a struct Board
+
+	unsigned int flagMonitorComand;
+	unsigned int timeMonitorComand;
 } MemDados;
 
 

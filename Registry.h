@@ -2,8 +2,8 @@
 #define REGISTRY_H
 
 typedef struct {
-	int actualSize;
-	int actualTime;
+	unsigned int actualSize;
+	unsigned int actualTime;
 	int sizeBoardMAX;	// Initial size of the board
 	int startAguaMAX;		// Time that takes for the water to start running
 } REGISTO_DADOS;

@@ -38,7 +38,7 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 		}
 		else if (wcscmp(comand, TEXT("insert-block")) == 0) {
 			aux.code = 2;
-
+			//x e y
 		}
 		if (aux.code != 0) {
 			WaitForSingleObject(data->memDados->semMonitor, INFINITE);
@@ -69,6 +69,7 @@ DWORD WINAPI ThreadPrintBoard(LPVOID param) {
 		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
 		CopyMemory(&aux,&data->memDados->VBoard, sizeof(Board));
 		ReleaseMutex(data->memDados->mutexBoard);
+
 		printBoard(&aux);
 		_ftprintf(stderr, TEXT("evento print\n"));
 		Sleep(3000);

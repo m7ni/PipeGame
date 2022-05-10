@@ -10,6 +10,9 @@ typedef struct {
 	char board[20][20];
 	unsigned int actualSize;		//actual size that we are playing
 	char pecas[6];		//array that hold the available pieces;
+	unsigned int begin[2];
+	//unsigned int lastInsertPos[2];
+	char lastInsert;
 }Board;
 
 
