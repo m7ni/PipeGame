@@ -166,25 +166,26 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startig
 	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
 	Sleep(0); //data->registoDados.actualTime*1000 <- Meter isto quando se entregar
 	data->memDados.flagMonitorComand = 0;
+	Board aux;
 	while (data->continua) {
 		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
 
 		Sleep(3000);
 
 		if (data->memDados.flagMonitorComand) {
-			Sleep(data->memDados.flagMonitorComand * 1000);
+			Sleep(data->memDados.flagMonitorComand * 10000);
 			data->memDados.flagMonitorComand = 0;
 		}
 
-		Board aux;
+		
 		WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
-		CopyMemory(&data->memDados.VBoard, &aux, sizeof(Board));
+		CopyMemory(&aux, data->memDados.VBoard, sizeof(Board));
 		ReleaseMutex(data->memDados.mutexBoard);
 
 		DWORD res= insertWater(&aux);
 		
 		WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
-		CopyMemory(&aux, data->memDados.VBoard, sizeof(Board));
+		CopyMemory(data->memDados.VBoard, &aux, sizeof(Board));
 		ReleaseMutex(data->memDados.mutexBoard);
 
 
