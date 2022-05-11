@@ -36,7 +36,7 @@ void setupBoard(Board * aux, DWORD actualSize) {
 		goUp = TRUE;
 									//goUP é null, por isso só temos que chegar ao lado direito do board e estamos na pos final
 
-	for (DWORD j = 1; j < aux->actualSize - 2; j++) {
+	for (DWORD j = 1; j < aux->actualSize - 1; j++) {
 		aux->board[lineBegin][j] = '━';
 	}
 
@@ -89,10 +89,10 @@ void insertWater(Board * board) {
 void printBoard(Board* aux) {
 
 	for (DWORD i = 0; i < aux->actualSize; i++) {
-		printf("\n");
+		_tprintf(TEXT("\n"));
 		for (DWORD j = 0; j < aux->actualSize; j++)
 		{
-			printf("%c", aux->board[i][j]);
+			_tprintf(TEXT("%c"), aux->board[i][j]);
 		}
 	}
 }
