@@ -6,84 +6,391 @@ LARGE_INTEGER intToLargeInt(int i) {
 	return li;
 }
 
-void setupBoard(Board * aux, DWORD actualSize) {
+void setupBoard(MemDados* aux, DWORD actualSize) {
 	srand(time(NULL));
-	BOOL goUp = NULL;
+	DWORD goUp;
 
-	aux->actualSize = actualSize;
-	
-	for (DWORD i = 0; i < aux->actualSize; i++) {
-		for (DWORD j = 0; j < aux->actualSize; j++)
+	WaitForSingleObject(aux->mutexBoard, INFINITE);
+
+	aux->VBoard->actualSize = actualSize;
+
+	for (DWORD i = 0; i < aux->VBoard->actualSize; i++) {
+		for (DWORD j = 0; j < aux->VBoard->actualSize; j++)
 		{
-			aux->board[i][j] = '.';
+			aux->VBoard->board[i][j] = '.';
 		}
 	}
-	
-	DWORD lineBegin = rand() % aux->actualSize;
-	DWORD lineEnd = rand() % aux->actualSize;
-
-	aux->begin[0] = lineBegin;
-	aux->begin[1] = 0;
-	aux->lastInsert = 'B';
 
 
-	aux->board[lineBegin][0] = 'B'; //begin position
-	aux->board[lineEnd][aux->actualSize-1] = 'E'; //end position
+
+	DWORD lineBegin = rand() % aux->VBoard->actualSize;
+	DWORD lineEnd = rand() % aux->VBoard->actualSize;
+
+	DWORD VoH = rand() % 2;
+	//DWORD VoH = 1;
+	//_tprintf(TEXT("RAND> %d"), VoH);
+
+	//DWORD lineBegin = 1;
+	//DWORD lineEnd = 15;
+
 
 	if (lineEnd > lineBegin) //temos que ir para baixo quando chegar ao lado direito da tabela
-		goUp = FALSE;
-	else if (lineEnd < lineBegin) //temos que ir para cim quando chegar ao lado direito da tabela
-		goUp = TRUE;
-									//goUP é null, por isso só temos que chegar ao lado direito do board e estamos na pos final
-
-	for (DWORD j = 1; j < aux->actualSize - 1; j++) {
-		aux->board[lineBegin][j] = '━';
+	{
+		goUp = -1;
+	}
+	else if (lineEnd < lineBegin) {
+		goUp = 1;
+	} //temos que ir para cim quando chegar ao lado direito da tabela
+	else {
+		goUp = 0;
 	}
 
-	switch (goUp) {
-	case TRUE:
-		aux->board[lineBegin][aux->actualSize - 1] = '┛';
+	if (VoH == 0) { //caminho na horizontal 
+		aux->VBoard->begin[0] = lineBegin;
+		aux->VBoard->begin[1] = 0;
+		aux->VBoard->lastInsert = 'B';
 
-		for (DWORD i = lineBegin - 1; i > lineEnd; i--) {
-			aux->board[i][aux->actualSize - 1] = '┃';
+
+		aux->VBoard->board[lineBegin][0] = 'B'; //begin position
+		aux->VBoard->board[lineEnd][aux->VBoard->actualSize - 1] = 'E'; //end position
+
+
+		for (DWORD j = 1; j < aux->VBoard->actualSize - 1; j++) {
+			aux->VBoard->board[lineBegin][j] = '-';
 		}
-		break;
-	case FALSE:
-		aux->board[lineBegin][aux->actualSize - 1] = '┓';
 
-		for (DWORD i = lineBegin; i < lineEnd; i++) {
-			aux->board[i][aux->actualSize - 1] = '┃';
+		switch (goUp) {
+		case 1:
+			aux->VBoard->board[lineBegin][aux->VBoard->actualSize - 1] = 'S';
+
+			for (DWORD i = lineBegin - 1; i > lineEnd; i--) {
+				aux->VBoard->board[i][aux->VBoard->actualSize - 1] = '|';
+			}
+			break;
+		case -1:
+			aux->VBoard->board[lineBegin][aux->VBoard->actualSize - 1] = 'D';
+
+			for (DWORD i = lineBegin + 1; i < lineEnd; i++) {
+				aux->VBoard->board[i][aux->VBoard->actualSize - 1] = '|';
+			}
+			break;
+
+		default:
+			break;
 		}
 
-		break;
-	default:
-		break;
+	}
+	else { //caminho na vertical
+
+		aux->VBoard->begin[0] = 0;
+		aux->VBoard->begin[1] = lineBegin;
+		aux->VBoard->lastInsert = 'B';
+
+
+		aux->VBoard->board[0][lineBegin] = 'B'; //begin position
+		aux->VBoard->board[aux->VBoard->actualSize - 1][lineEnd] = 'E'; //end position
+
+		for (DWORD j = 1; j < aux->VBoard->actualSize - 1; j++) {
+			aux->VBoard->board[j][lineBegin] = '|';
+		}
+
+		switch (goUp) {
+		case 1:
+			aux->VBoard->board[aux->VBoard->actualSize - 1][lineBegin] = 'L';
+
+			for (DWORD i = lineBegin - 1; i > lineEnd; i--) {
+				aux->VBoard->board[aux->VBoard->actualSize - 1][i] = '-';
+			}
+			break;
+		case -1:
+			aux->VBoard->board[aux->VBoard->actualSize - 1][lineBegin] = 'R';
+
+			for (DWORD i = lineBegin + 1; i < lineEnd; i++) {
+				aux->VBoard->board[aux->VBoard->actualSize - 1][i] = '-';
+			}
+			break;
+
+		default:
+			break;
+		}
+
 	}
 
+	ReleaseMutex(aux->mutexBoard);
+
+	/*
 	aux->pecas[0] = '━';
 	aux->pecas[1] = '┃';
 	aux->pecas[2] = '┏';
 	aux->pecas[3] = '━';
 	aux->pecas[4] = '┛';
 	aux->pecas[5] = '┗';
-	
+	*/
+
+
+
 }
 
-void insertWater(Board * board) {
+DWORD insertWater(Board* board) {
 	if (board->lastInsert == 'B') {
-		if (board->board[board->begin[0]][board->begin[1]+1]) { //1 para o lado direito
 
-		}
-		else if (board->board[board->begin[0] + 1][board->begin[1]]) { //para baixo
+		board->lastWaterXY[0] = board->begin[0];
+		board->lastWaterXY[1] = board->begin[1];
 
-		}
-		else if (board->board[board->begin[0] -1][board->begin[1]]) {
+		if (board->board[board->begin[0]][board->begin[1] + 1] == '-')
+			board->lastInsert = '-';
+		else
+			board->lastInsert = '|';
 
-		}
+		board->board[board->begin[0]][board->begin[1]] = '*';
+
+		return 0;
+
 	}
 	else {
 
+		//_tprintf(TEXT("\nUltimo tubo: (%c) [%d][%d] \n"), board->lastInsert, board->lastWaterXY[0] + 1, board->lastWaterXY[1] + 1);
+
+		switch (board->lastInsert)
+		{
+		case '-': {
+			//topo
+			if (board->lastWaterXY[0] == 0) {
+				//direita
+				if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == '-' || board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'S' || board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'D') {
+
+					board->lastWaterXY[1]++;
+
+					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
+					return 0;
+				}
+				else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'E') {
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = '*';
+					return 1;
+				}
+
+				//esquerda
+
+				//baixo
+				else
+					return -1;
+
+			}
+			//Fundo
+			else if (board->lastWaterXY[0] == board->actualSize - 1) {
+				//direita
+				if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == '-' || board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'S' || board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'D') {
+
+					board->lastWaterXY[1]++;
+
+					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
+					return 0;
+				}
+				else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'E') {
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = '*';
+					return 1;
+				}
+				//esquerda
+				if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == '-') {
+
+					board->lastWaterXY[1]--;
+
+					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
+					return 0;
+				}
+				else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'E') {
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = '*';
+					return 1;
+				}
+				//cima
+				else
+					return -1;
+			}
+
+			//meio
+			else
+			{
+				//direita
+				if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == '-' || board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'S' || board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'D') {
+
+					board->lastWaterXY[1]++;
+
+					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
+					return 0;
+				}
+				else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'E') {
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = '*';
+					return 1;
+				}
+				//esquerda
+
+				//cima
+
+				//baixo
+				else
+					return -1;
+			}
+
+			break;
+		}
+
+		case '|': {
+
+			//topo
+			if (board->lastWaterXY[0] == 0) {
+				if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == '|') {
+
+					board->lastWaterXY[0]++;
+
+					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
+					return 0;
+				}
+			}
+
+			//Fundo
+			else if (board->lastWaterXY[0] == board->actualSize - 1) {
+				return -1;
+			}
+			//meio
+			else
+			{
+				//cima
+				if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == '|' || board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == '┏' || board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == '┓') {
+
+					board->lastWaterXY[0]--;
+
+					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
+					return 0;
+				}
+				else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E') {
+					board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] = '*';
+					return 1;
+				}
+
+				//baixo
+				if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == '|' || board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'L' || board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'R') {
+					_tprintf(TEXT("\nencontrei a peça em baixo"));
+					board->lastWaterXY[0]++;
+
+					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
+					return 0;
+				}
+				else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'E') {
+					board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] = '*';
+					return 1;
+				}
+				else
+					return -1;
+			}
+
+			break;
+		}
+
+				// ┛
+		case 'S': {
+			//topo
+			if (board->lastWaterXY[0] == 0) {
+				return -1;
+			}
+			else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E') {
+				board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] = '*';
+				return 1;
+			}
+			//fundo
+			//meio
+			else {
+				if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == '|' || board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == '┏' || board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == '┓') {
+					board->lastWaterXY[0]--;
+
+					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
+					return 0;
+				}
+			}
+
+			break;
+		}
+
+				// ┓
+		case 'D': {
+			//fundo
+			if (board->lastWaterXY[0] == board->actualSize - 1) {
+				return -1;
+			}
+			else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'E') {
+				board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] = '*';
+				return 1;
+			}
+			//topo/meio
+			else
+			{
+				if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == '|' || board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == '┛' || board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == '┗') {
+
+					board->lastWaterXY[0]++;
+
+					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
+					return 0;
+				}
+
+			}
+
+			break;
+		}
+
+
+		case 'L': {
+			if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == '-') {
+
+				board->lastWaterXY[1]--;
+
+				board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+				board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
+				return 0;
+			}
+			break;
+		}
+
+
+		case 'R': {
+			if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == '-') {
+
+				board->lastWaterXY[1]++;
+
+				board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+				board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
+				return 0;
+			}
+			break;
+		}
+
+
+		default:
+
+			break;
+		}
+
 	}
+
+	return -2;
 }
 
 void printBoard(Board* aux) {
@@ -97,3 +404,40 @@ void printBoard(Board* aux) {
 	}
 }
 
+/*
+int _tmain(int argc, TCHAR* argv[]) {
+
+#ifdef UNICODE
+	_setmode(_fileno(stdin), _O_WTEXT);
+	_setmode(_fileno(stdout), _O_WTEXT);
+#endif
+
+	Board test;
+	test.actualSize = 20;
+
+	setupBoard(&test, 20);
+
+	printBoard(&test);
+
+	DWORD res = 12;
+	do {
+		res = insertWater(&test);
+		printBoard(&test);
+		Sleep(500);
+	} while (res != -1 && res != 1); //-1 se perdeu ou 1 se ganhou 
+
+	if (res == 1) {
+		_tprintf(TEXT("\nGanhou"));
+	}
+	else {
+		_tprintf(TEXT("\nPerdeu"));
+	}
+
+
+	TCHAR comand[20];
+	_ftprintf(stdout, TEXT("\nComand: "));
+	_tscanf_s(TEXT("%s"), &comand, 20 - 1);
+
+
+
+}*/

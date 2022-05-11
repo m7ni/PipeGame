@@ -102,9 +102,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	KB.memDados.VBufCircular->out = 0;
 	KB.memDados.VBoard->actualSize = KB.registoDados.actualSize;
 
-
-	//setupBoard(&KB.memDados,KB.registoDados.actualSize);
-
+	setupBoard(&KB.memDados,KB.registoDados.actualSize);
 
 	CONSUMER.memDados = &KB.memDados;
 	TWater.memDados = &KB.memDados;
@@ -167,26 +165,34 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startig
 	_ftprintf(stderr, TEXT("ThreadWaterRunning Started\n"));
 	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
 	Sleep(0); //data->registoDados.actualTime*1000 <- Meter isto quando se entregar
-
+	data->memDados.flagMonitorComand = 0;
 	while (data->continua) {
 		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
-		_ftprintf(stderr, TEXT("\nprint Thread Water running\n"));
+
 		Sleep(3000);
 
-
 		if (data->memDados.flagMonitorComand) {
-			Sleep(data->memDados.flagMonitorComand*1000);
-				data->memDados.flagMonitorComand = 0;
+			Sleep(data->memDados.flagMonitorComand * 1000);
+			data->memDados.flagMonitorComand = 0;
 		}
 
-		/*WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
+		Board aux;
+		WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
 		CopyMemory(&data->memDados.VBoard, &aux, sizeof(Board));
-		ReleaseMutex(data->memDados.mutexBoard);*/
+		ReleaseMutex(data->memDados.mutexBoard);
 
-
-		//SetEvent(data->sinc->printBoard); usar quando queremos avisar o monitor que pode imprimir
+		DWORD res= insertWater(&aux);
 		
-		//WaitForSingleObject(data->sinc->pauseMonitorComand, INFINITE); //TODO: perguntar ao stor como é que isto funciona 
+		WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
+		CopyMemory(&aux, data->memDados.VBoard, sizeof(Board));
+		ReleaseMutex(data->memDados.mutexBoard);
+
+
+		SetEvent(data->sinc->printBoard); // usar quando queremos avisar o monitor que pode imprimir
+		
+		if (res == 1) {}
+		else {}
+		
 	}
 
 }

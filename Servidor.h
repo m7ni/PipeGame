@@ -11,7 +11,7 @@ typedef struct {
 	unsigned int actualSize;		//actual size that we are playing
 	char pecas[6];		//array that hold the available pieces;
 	unsigned int begin[2];
-	//unsigned int lastInsertPos[2];
+	unsigned int lastWaterXY[2];
 	char lastInsert;
 }Board;
 
