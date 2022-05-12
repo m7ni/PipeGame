@@ -82,12 +82,14 @@ DWORD WINAPI ThreadPrintBoard(LPVOID param) {
 		printBoard(&aux);
 		Sleep(1000);
 		if (aux.win == 1) {
-			*data->continua = 0;
+
 			_ftprintf(stderr, TEXT("Ganhou\n"));
+			*data->continua = 0;
 		}
 		else if (aux.win == -1){
-			*data->continua = 0;
+
 			_ftprintf(stderr, TEXT("Perdeu\n"));
+			*data->continua = 0;
 		}
 	
 	}

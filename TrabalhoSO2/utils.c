@@ -16,6 +16,8 @@ void setupBoard(MemDados* aux, DWORD actualSize) {
 
 	DWORD lineBegin = rand() % aux->VBoard->actualSize;
 	DWORD lineEnd = rand() % aux->VBoard->actualSize;
+	//DWORD lineBegin = 3;
+	//DWORD lineEnd = 4;
 
 	DWORD VoH = rand() % 2;
 	//DWORD VoH = 1;
@@ -311,6 +313,10 @@ DWORD insertWater(Board* board) {
 					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
 					return 0;
 				}
+				else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E') {
+					board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] = '*';
+					return 1;
+				}
 			}
 
 			break;
@@ -338,6 +344,10 @@ DWORD insertWater(Board* board) {
 					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
 					return 0;
 				}
+				else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'E') {
+					board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] = '*';
+					return 1;
+				}
 
 			}
 
@@ -355,6 +365,10 @@ DWORD insertWater(Board* board) {
 				board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
 				return 0;
 			}
+			else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'E') {
+				board->board[board->lastWaterXY[0]][board->lastWaterXY[1]-1] = '*';
+				return 1;
+			}
 			break;
 		}
 
@@ -368,6 +382,10 @@ DWORD insertWater(Board* board) {
 
 				board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
 				return 0;
+			}
+			else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'E') {
+				board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = '*';
+				return 1;
 			}
 			break;
 		}
