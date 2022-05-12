@@ -13,6 +13,7 @@ typedef struct {
 	unsigned int begin[2];
 	unsigned int lastWaterXY[2];
 	char lastInsert;
+	unsigned int win;
 }Board;
 
 

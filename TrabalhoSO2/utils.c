@@ -1,27 +1,18 @@
 ﻿#include "utils.h"
 
-LARGE_INTEGER intToLargeInt(int i) {
-	LARGE_INTEGER li;
-	li.QuadPart = i;
-	return li;
-}
-
 void setupBoard(MemDados* aux, DWORD actualSize) {
 	srand(time(NULL));
 	DWORD goUp;
 
 	WaitForSingleObject(aux->mutexBoard, INFINITE);
-
 	aux->VBoard->actualSize = actualSize;
-
+	aux->VBoard->win = 0;
 	for (DWORD i = 0; i < aux->VBoard->actualSize; i++) {
 		for (DWORD j = 0; j < aux->VBoard->actualSize; j++)
 		{
 			aux->VBoard->board[i][j] = '.';
 		}
 	}
-
-
 
 	DWORD lineBegin = rand() % aux->VBoard->actualSize;
 	DWORD lineEnd = rand() % aux->VBoard->actualSize;
@@ -281,7 +272,6 @@ DWORD insertWater(Board* board) {
 
 				//baixo
 				if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == '|' || board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'L' || board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'R') {
-					_tprintf(TEXT("\nencontrei a peça em baixo"));
 					board->lastWaterXY[0]++;
 
 					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
@@ -395,49 +385,30 @@ DWORD insertWater(Board* board) {
 
 void printBoard(Board* aux) {
 
+	_tprintf(TEXT("-----------------"));
 	for (DWORD i = 0; i < aux->actualSize; i++) {
 		_tprintf(TEXT("\n"));
 		for (DWORD j = 0; j < aux->actualSize; j++)
 		{
-			_tprintf(TEXT("%c"), aux->board[i][j]);
+			_tprintf(TEXT(" %c"), aux->board[i][j]);
 		}
 	}
+	_tprintf(TEXT("\n"));
 }
 
-/*
-int _tmain(int argc, TCHAR* argv[]) {
-
-#ifdef UNICODE
-	_setmode(_fileno(stdin), _O_WTEXT);
-	_setmode(_fileno(stdout), _O_WTEXT);
-#endif
-
-	Board test;
-	test.actualSize = 20;
-
-	setupBoard(&test, 20);
-
-	printBoard(&test);
-
-	DWORD res = 12;
-	do {
-		res = insertWater(&test);
-		printBoard(&test);
-		Sleep(500);
-	} while (res != -1 && res != 1); //-1 se perdeu ou 1 se ganhou 
-
-	if (res == 1) {
-		_tprintf(TEXT("\nGanhou"));
+DWORD putWall(MemDados* aux, DWORD pos[2]) {
+	WaitForSingleObject(aux->mutexBoard, INFINITE);
+	if (pos[1] > aux->VBoard->actualSize || pos[0] > aux->VBoard->actualSize) {
+		ReleaseMutex(aux->mutexBoard);
+		return -1;
 	}
-	else {
-		_tprintf(TEXT("\nPerdeu"));
+	if (aux->VBoard->board[pos[0]][pos[1]] != '.') {
+		ReleaseMutex(aux->mutexBoard);
+		return -1;
 	}
+		
+	aux->VBoard->board[pos[0]][pos[1]] == 'W';
 
-
-	TCHAR comand[20];
-	_ftprintf(stdout, TEXT("\nComand: "));
-	_tscanf_s(TEXT("%s"), &comand, 20 - 1);
-
-
-
-}*/
+	ReleaseMutex(aux->mutexBoard);
+	return 1;
+}

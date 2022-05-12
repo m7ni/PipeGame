@@ -4,13 +4,13 @@
 
 
 typedef struct {
-	DWORD continua;
+	DWORD *continua;
 	MemDados* memDados;			//access to data for the sharedMemory
 	Sinc* sinc;
 }THREADTEC;
 
 typedef struct { //thread thats responsible for showing the board
-	DWORD continua;
+	DWORD *continua;
 	Sinc* sinc;
 	MemDados* memDados;			//access to data for the sharedMemory
 }THREADPRINT;
@@ -19,18 +19,24 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 	THREADTEC* data = (THREADTEC*)param;
 	TCHAR comand[SIZE];
 	Comand aux;
-	
-
+	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE);
+	Sleep(1000);
 	aux.code = 0;
 	_ftprintf(stderr, TEXT("ThreadKeyboard Started\n"));
-	while (data->continua)
+	while (*data->continua)
 	{
+	
 		_ftprintf(stdout, TEXT("Comand: "));
 		_tscanf_s(TEXT("%s"), &comand, SIZE - 1);
 
+		if (*data->continua == 0) {
+			_ftprintf(stderr, TEXT("ThreadKeyboard ended\n"));
+			return 1;
+		}
+
 		if (wcscmp(comand, TEXT("stop-water")) == 0) {
-			_ftprintf(stderr, TEXT("--stop-water inserted--\n"));
-			_ftprintf(stdout, TEXT("seconds: "));
+			
+			_ftprintf(stdout, TEXT("-----------> seconds: "));
 			_tscanf_s(TEXT("%d"), &aux.time, sizeof(unsigned int));
 
 		
@@ -38,7 +44,10 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 		}
 		else if (wcscmp(comand, TEXT("insert-block")) == 0) {
 			aux.code = 2;
-			//x e y
+			_ftprintf(stdout, TEXT("-----------> x: "));
+			_tscanf_s(TEXT("%d"), &aux.wall[0], sizeof(unsigned int));
+			_ftprintf(stdout, TEXT("-----------> y: "));
+			_tscanf_s(TEXT("%d"), &aux.wall[1], sizeof(unsigned int));
 		}
 		if (aux.code != 0) {
 			WaitForSingleObject(data->memDados->semMonitor, INFINITE);
@@ -62,7 +71,7 @@ DWORD WINAPI ThreadPrintBoard(LPVOID param) {
 	THREADPRINT* data = (THREADPRINT*)param;
 	Board aux;
 	_ftprintf(stderr, TEXT("ThreadPrintBoard Started\n"));
-	while (data->continua)
+	while (*data->continua)
 	{
 		WaitForSingleObject(data->sinc->printBoard,INFINITE); //Event
 
@@ -71,9 +80,15 @@ DWORD WINAPI ThreadPrintBoard(LPVOID param) {
 		ReleaseMutex(data->memDados->mutexBoard);
 
 		printBoard(&aux);
-		_ftprintf(stderr, TEXT("evento print\n"));
-		Sleep(3000);
-		
+		Sleep(1000);
+		if (aux.win == 1) {
+			*data->continua = 0;
+			_ftprintf(stderr, TEXT("Ganhou\n"));
+		}
+		else if (aux.win == -1){
+			*data->continua = 0;
+			_ftprintf(stderr, TEXT("Perdeu\n"));
+		}
 	
 	}
 }
@@ -85,6 +100,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	THREADTEC threadtec;
 	THREADPRINT threadprint;
 	Sinc sinc;
+	DWORD continua = 1;
 	if (!abreFileMap(&memDados))
 	{
 		_ftprintf(stderr, TEXT("There is no Servidor open! Try later...\n"));
@@ -102,9 +118,10 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	threadtec.sinc = &sinc;
 	threadprint.sinc = &sinc;
-	threadtec.continua = 1;
+	threadtec.continua = &continua;
 	threadtec.memDados = &memDados;
 	threadprint.memDados = &memDados;
+	threadprint.continua = &continua;
 
 	if (argc != 1)
 	{
@@ -125,6 +142,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 
 	WaitForMultipleObjects(contThread, hthread, TRUE, INFINITE);
-	fechaViewFile(&threadtec.memDados);
-	fechaHandleMem(&threadtec.memDados);
+	CloseViewFile(&memDados);
+	CloseHandleMem(&memDados);
+	CloseSinc(&sinc,0);
+	CloseSem(&memDados);
 }

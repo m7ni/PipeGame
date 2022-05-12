@@ -35,7 +35,7 @@
 typedef struct { //Ainda não sei bem para que é que vai ser preciso (Neste momento é para passar os comandos atravez de int)
 	unsigned int code; //Passar comandos MONITOR -> SERVIDOR
 	unsigned int time; 
-
+	unsigned int wall[2];
 } Comand;
 
 
@@ -58,8 +58,10 @@ typedef struct {
 	LPHANDLE FileMapBoard;			// File Map para a struct Board
 	Board* VBoard;			// Vista para a struct Board
 
+
 	unsigned int flagMonitorComand;
 	unsigned int timeMonitorComand;
+
 } MemDados;
 
 
@@ -72,12 +74,14 @@ typedef struct {
 
 BOOL abreFileMap(MemDados* dados);
 BOOL criaFileMap(MemDados* dados);
-BOOL fechaHandleMem(MemDados* dados);
-BOOL fechaViewFile(MemDados* dados);
+BOOL CloseHandleMem(MemDados* dados);
+BOOL CloseViewFile(MemDados* dados);
 BOOL criaSincBuffer( MemDados* sem);
 BOOL criaMapViewOfFiles(MemDados* dados);
 BOOL criaSincGeral(Sinc* sinc, DWORD origin);
 
+BOOL CloseSinc(Sinc* sinc);
+BOOL CloseSem(MemDados* dados);
 #endif /*MEMORY_H*/
 
 

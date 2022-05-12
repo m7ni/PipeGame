@@ -27,13 +27,29 @@ BOOL criaFileMap(MemDados* dados) {
     return TRUE;
 }
 
-BOOL fechaHandleMem(MemDados* dados) {
+BOOL CloseHandleMem(MemDados* dados) {
     return CloseHandle(dados->FileMapBoard) && CloseHandle(dados->FileBufCircular);
 }
 
-BOOL fechaViewFile(MemDados* dados) {
+BOOL CloseViewFile(MemDados* dados) {
     return UnmapViewOfFile(dados->VBoard) && UnmapViewOfFile(dados->VBufCircular);
 }
+
+BOOL CloseSem(MemDados* dados) {
+    return CloseHandle(dados->mutexSEM) && CloseHandle(dados->semMonitor) && CloseHandle(dados->semServer)&& CloseHandle(dados->mutexBoard);
+}
+
+BOOL CloseSinc(Sinc *sinc,DWORD flag) {
+    if (flag == 1) {
+        CloseHandle(sinc->pauseResumeEvent);
+        CloseHandle(sinc->timerStartEvent);
+
+    }
+
+
+    return CloseHandle(sinc->printBoard);
+}
+
 
 BOOL criaSincBuffer(MemDados * sem) {
     sem->semMonitor = CreateSemaphore(NULL, TAM, TAM, SEMAFORO_BUFFER_M);  //escrita
@@ -51,27 +67,22 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
    
     if (origin == 1) { //only the server need this handles
 
-        sinc->timerStartEvent = CreateEvent(NULL,
-            TRUE,
-            FALSE,
-            TIMER_START_EVENT);
 
         sinc->pauseResumeEvent = CreateEvent(NULL,
             TRUE,
             TRUE,
             PAUSE_RESUME_EVENT);
 
-        /*
-        sinc->pauseMonitorComand = CreateWaitableTimer(NULL,
-            TRUE,
-            PAUSE_MONITOR_COMAND);
-            */
-
         if (sinc->timerStartEvent == NULL || sinc->pauseResumeEvent == NULL) {
             _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
             return FALSE;
         }
     }
+
+        sinc->timerStartEvent = CreateEvent(NULL,
+            TRUE,
+            FALSE,
+            TIMER_START_EVENT);
 
     sinc->printBoard= CreateEvent(NULL,
         FALSE,
@@ -97,7 +108,7 @@ BOOL criaMapViewOfFiles(MemDados* dados) {
     if (dados->VBufCircular == NULL)
     {
         _ftprintf(stderr, TEXT("Error creating view to buffer FileMap!\n"));
-        fechaHandleMem(dados);
+        CloseHandleMem(dados);
         return FALSE;
     }
 
@@ -109,7 +120,7 @@ BOOL criaMapViewOfFiles(MemDados* dados) {
     if (dados->VBoard == NULL)
     {
         _ftprintf(stderr, TEXT("Error creating view to Board FileMap!\n"));
-        fechaHandleMem(dados);
+        CloseHandleMem(dados);
         return FALSE;
     }
 

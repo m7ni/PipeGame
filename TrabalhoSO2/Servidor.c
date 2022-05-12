@@ -17,21 +17,21 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param);
 DWORD WINAPI ThreadComandsMonitor(LPVOID param);
 
 typedef struct {
-	DWORD continua;
+	DWORD* continua;
 	MemDados* memDados;			//access to data for the sharedMemory
 	Sinc* sinc;
 }THREADWATER;
 
 typedef struct {
-	DWORD continua;
+	DWORD* continua;
 	REGISTO_DADOS registoDados; //access to data from the registry
 	MemDados memDados;			//access to data for the sharedMemory
 	Sinc* sinc;
 }THREADTEC,* PTHREADTEC;
 
 typedef struct {
+	DWORD* continua;
 	Sinc* sinc;
-	unsigned int continua;
 	MemDados* memDados;			//access to data for the sharedMemory
 }THREADCONS, * PTHREADCONS;
 
@@ -40,7 +40,7 @@ typedef struct {
 int _tmain(int argc, TCHAR* argv[]) {
 	HANDLE hthread[3];
 	DWORD contThread = 0;
-
+	DWORD continua = 1;
 
 	THREADTEC KB;
 	THREADCONS CONSUMER;
@@ -50,14 +50,14 @@ int _tmain(int argc, TCHAR* argv[]) {
 	Board board;
 	Sinc sinc;
 
-	KB.continua = 1;
-	CONSUMER.continua = 1;
-	TWater.continua = 1;
+	KB.continua = &continua;
+	CONSUMER.continua = &continua;
+	TWater.continua = &continua;
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
 	_setmode(_fileno(stdout), _O_WTEXT);
 #endif
-	
+
 	if (argc != 3) //user doesn't define inital values, so we go to registry to obtain them
 	{
 		verificaChave(&KB.registoDados);
@@ -92,7 +92,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	KB.sinc = &sinc;
 	CONSUMER.sinc = &sinc;
-	
+
 	KB.memDados.semMonitor = sem.semMonitor;
 	KB.memDados.semServer = sem.semServer;
 	KB.memDados.mutexSEM = sem.mutexSEM;
@@ -102,12 +102,13 @@ int _tmain(int argc, TCHAR* argv[]) {
 	KB.memDados.VBufCircular->out = 0;
 	KB.memDados.VBoard->actualSize = KB.registoDados.actualSize;
 
-	setupBoard(&KB.memDados,KB.registoDados.actualSize);
+	setupBoard(&KB.memDados, KB.registoDados.actualSize);
 
 	CONSUMER.memDados = &KB.memDados;
 	TWater.memDados = &KB.memDados;
-	if ((hthread[contThread++] = CreateThread(NULL, 0, Threadkeyboard, &KB, 0, NULL)) == NULL) // Thread responsible for the keyboard
-	{
+	// Thread responsible for the keyboard
+	
+	if ((hthread[contThread++] = CreateThread(NULL, 0, Threadkeyboard, &KB, 0, NULL)) == NULL) {
 		_ftprintf(stderr, TEXT("Error creating Thread responsible for the keyboard\n"));
 		return -1;
 	}
@@ -118,63 +119,75 @@ int _tmain(int argc, TCHAR* argv[]) {
 		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Monitor input\n"));
 		return -1;
 	}
-
+	// Thread responsible for the Water
+	
 	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &KB, 0, NULL)) == NULL)
 	{
 		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Monitor input\n"));
 		return -1;
 	}
-	
+
 
 	WaitForMultipleObjects(contThread, hthread, TRUE, INFINITE);
-	fechaViewFile(&KB.memDados);
-	fechaHandleMem(&KB.memDados);
+	CloseViewFile(&KB.memDados);
+	CloseHandleMem(&KB.memDados);
+	CloseSinc(&sinc);
+	//CloseSem(&KB.memDados);
 }
 
 DWORD WINAPI Threadkeyboard(LPVOID param) {
 	THREADTEC* data = (THREADTEC*)param;
 	TCHAR comand[SIZE];
 	DWORD aux;
+
 	_ftprintf(stderr, TEXT("ThreadKeyboard Started\n"));
-	while (data->continua)
+	while (*data->continua)
 	{
 		_ftprintf(stdout, TEXT("Comand: "));
 		_tscanf_s(TEXT("%s"), &comand, SIZE - 1);
 
+		if (*data->continua == 0) {
+			_ftprintf(stderr, TEXT("ThreadKeyboard Ended\n"));
+			return 1;
+		}
+
 		if (wcscmp(comand, TEXT("start")) == 0) {
 			SetEvent(data->sinc->timerStartEvent);
-			//CancelWaitableTimer(data->sinc->pauseMonitorComand);
+			_ftprintf(stderr, TEXT("-----------> Started\n"));
 		}
 		else if (wcscmp(comand, TEXT("acaba")) == 0) {
-			data->continua = 0;
-
+			*data->continua = 0;
 		}
 		else if (wcscmp(comand, TEXT("pause")) == 0) {
 			ResetEvent(data->sinc->pauseResumeEvent);
+			_ftprintf(stderr, TEXT("-----------> Paused\n"));
 		}
 		else if (wcscmp(comand, TEXT("resume")) == 0) {
 			SetEvent(data->sinc->pauseResumeEvent);
+			_ftprintf(stderr, TEXT("-----------> Resumed\n"));
 		}
 	}
-	_ftprintf(stderr, TEXT("ThreadKeyboard Ended\n"));
 
 }
 
 DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startign the water running
 	PTHREADTEC data = (PTHREADTEC)param;
-	_ftprintf(stderr, TEXT("ThreadWaterRunning Started\n"));
+	
 	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
 	Sleep(0); //data->registoDados.actualTime*1000 <- Meter isto quando se entregar
 	data->memDados.flagMonitorComand = 0;
 	Board aux;
-	while (data->continua) {
+	SetEvent(data->sinc->printBoard);
+	while (&data->continua) {
 		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
 
-		Sleep(3000);
+		Sleep(2000);
 
-		if (data->memDados.flagMonitorComand) {
-			Sleep(data->memDados.flagMonitorComand * 10000);
+		if (data->memDados.flagMonitorComand) { //Monitor Comand
+			_ftprintf(stderr, TEXT("-----------> Water Stoped for %d seconds\n"), data->memDados.timeMonitorComand);
+			Sleep(data->memDados.timeMonitorComand * 1000);
 			data->memDados.flagMonitorComand = 0;
+		
 		}
 
 		
@@ -191,8 +204,24 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startig
 
 		SetEvent(data->sinc->printBoard); // usar quando queremos avisar o monitor que pode imprimir
 		
-		if (res == 1) {}
-		else {}
+		if (res == 1) {
+			WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
+			data->memDados.VBoard->win = 1;
+			ReleaseMutex(data->memDados.mutexBoard);
+			_ftprintf(stderr, TEXT("Ganhou\n"));
+			*data->continua = 0;
+			ReleaseSemaphore(data->memDados.semServer, 1, NULL);
+			return 1;
+		}
+		else if (res == -1) {
+			_ftprintf(stderr, TEXT("Perdeu\n"));
+			WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
+			data->memDados.VBoard->win = -1;
+			ReleaseMutex(data->memDados.mutexBoard);
+			*data->continua = 0;
+			ReleaseSemaphore(data->memDados.semServer, 1, NULL);
+			return 1;
+		}
 		
 	}
 
@@ -204,9 +233,14 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 	Comand aux;
 	LARGE_INTEGER liDueTime;
 	_ftprintf(stderr, TEXT("ThreadComandsMonitor Started\n"));
-	while (data->continua)
+	
+	while (*data->continua)
 	{
 		WaitForSingleObject(data->memDados->semServer, INFINITE);
+		if (*data->continua == 0) {
+			_ftprintf(stderr, TEXT("ThreadComandsMonitor Ended\n"));
+			return 1;
+		}
 		WaitForSingleObject(data->memDados->mutexSEM, INFINITE);
 
 		CopyMemory(&aux, &data->memDados->VBufCircular->UserComands[data->memDados->VBufCircular->out], sizeof(Comand));
@@ -217,15 +251,16 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 		switch (aux.code) {
 
 		case 1:
-
 			data->memDados->timeMonitorComand = aux.time;
 			data->memDados->flagMonitorComand = 1;
-			//liDueTime.QuadPart = -100000000LL;
-			//SetWaitableTimer(data->sinc.pauseMonitorComand, &liDueTime, 0, NULL, NULL, 0);
 			break;
 
 		case 2:
-			//TODO
+			
+			if (!putWall(data->memDados, &aux.wall)) {
+				_ftprintf(stderr, TEXT("Error placing wall\n"));
+			}
+
 			break;
 		}
 
