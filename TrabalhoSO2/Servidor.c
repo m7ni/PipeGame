@@ -257,9 +257,10 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 
 		case 2:
 			
-			if (!putWall(data->memDados, &aux.wall)) {
+			if (!putWall(data->memDados, aux.wallX, aux.wallY)) {
 				_ftprintf(stderr, TEXT("Error placing wall\n"));
-			}
+			}else
+				SetEvent(data->sinc->printBoard);
 
 			break;
 		}

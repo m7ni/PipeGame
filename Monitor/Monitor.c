@@ -45,9 +45,9 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 		else if (wcscmp(comand, TEXT("insert-block")) == 0) {
 			aux.code = 2;
 			_ftprintf(stdout, TEXT("-----------> x: "));
-			_tscanf_s(TEXT("%d"), &aux.wall[0], sizeof(unsigned int));
+			_tscanf_s(TEXT("%d"), &aux.wallX);
 			_ftprintf(stdout, TEXT("-----------> y: "));
-			_tscanf_s(TEXT("%d"), &aux.wall[1], sizeof(unsigned int));
+			_tscanf_s(TEXT("%d"), &aux.wallY);
 		}
 		if (aux.code != 0) {
 			WaitForSingleObject(data->memDados->semMonitor, INFINITE);

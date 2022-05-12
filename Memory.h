@@ -35,7 +35,8 @@
 typedef struct { //Ainda não sei bem para que é que vai ser preciso (Neste momento é para passar os comandos atravez de int)
 	unsigned int code; //Passar comandos MONITOR -> SERVIDOR
 	unsigned int time; 
-	unsigned int wall[2];
+	unsigned int wallX;
+	unsigned int wallY;
 } Comand;
 
 

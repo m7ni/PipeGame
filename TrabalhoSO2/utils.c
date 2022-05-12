@@ -414,18 +414,16 @@ void printBoard(Board* aux) {
 	_tprintf(TEXT("\n"));
 }
 
-DWORD putWall(MemDados* aux, DWORD pos[2]) {
+DWORD putWall(MemDados* aux, DWORD posX, DWORD posY) {
 	WaitForSingleObject(aux->mutexBoard, INFINITE);
-	if (pos[1] > aux->VBoard->actualSize || pos[0] > aux->VBoard->actualSize) {
+	if (posX > aux->VBoard->actualSize || posY > aux->VBoard->actualSize || posX < 0 || posY < 0 || aux->VBoard->board[posX][posY] != '.') {
 		ReleaseMutex(aux->mutexBoard);
+		_ftprintf(stderr, TEXT("-----------> Cant place wall here: [%d][%d]\n"), posX, posX);
 		return -1;
+	}else {
+		aux->VBoard->board[posX][posY] = 'W';
+		_ftprintf(stderr, TEXT("-----------> Placed wall at [%d][%d]\n"), posX, posX);
 	}
-	if (aux->VBoard->board[pos[0]][pos[1]] != '.') {
-		ReleaseMutex(aux->mutexBoard);
-		return -1;
-	}
-		
-	aux->VBoard->board[pos[0]][pos[1]] == 'W';
 
 	ReleaseMutex(aux->mutexBoard);
 	return 1;
