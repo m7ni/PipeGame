@@ -89,6 +89,7 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
         FALSE,
         EVENT_BOARD);
 
+
     if (sinc->printBoard == NULL   ) {
         _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
         return FALSE;

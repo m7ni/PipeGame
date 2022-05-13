@@ -155,7 +155,7 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 			SetEvent(data->sinc->timerStartEvent);
 			_ftprintf(stderr, TEXT("-----------> Started\n"));
 		}
-		else if (wcscmp(comand, TEXT("acaba")) == 0) {
+		else if (wcscmp(comand, TEXT("end")) == 0) {
 			*data->continua = 0;
 		}
 		else if (wcscmp(comand, TEXT("pause")) == 0) {

@@ -149,3 +149,4 @@ int _tmain(int argc, TCHAR* argv[]) {
 	CloseSinc(&sinc,0);
 	CloseSem(&memDados);
 }
+//insert-block

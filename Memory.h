@@ -71,6 +71,7 @@ typedef struct {
 	HANDLE pauseResumeEvent; //Server comand
 	//HANDLE pauseMonitorComand; //waitable timer to stop the water for x seconds
 	HANDLE printBoard; //Event that informs the monitor to print the board
+
 } Sinc;
 
 BOOL abreFileMap(MemDados* dados);
