@@ -46,7 +46,6 @@ BOOL CloseSinc(Sinc *sinc,DWORD flag) {
 
     }
 
-
     return CloseHandle(sinc->printBoard);
 }
 
@@ -79,15 +78,20 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
         }
     }
 
-        sinc->timerStartEvent = CreateEvent(NULL,
-            TRUE,
-            FALSE,
-            TIMER_START_EVENT);
+    sinc->timerStartEvent = CreateEvent(NULL,
+        TRUE,
+        FALSE,
+        TIMER_START_EVENT);
 
     sinc->printBoard= CreateEvent(NULL,
         FALSE,
         FALSE,
         EVENT_BOARD);
+
+    sinc->endMonitor = CreateEvent(NULL,
+        FALSE,
+        FALSE,
+        EVENT_END);
 
     if (sinc->printBoard == NULL   ) {
         _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));

@@ -31,6 +31,7 @@
 
 #define BOARD_MUTEX TEXT("BOARD_MUTEX")
 #define EVENT_BOARD TEXT("EVENT_BOARD")
+#define EVENT_END TEXT("EVENT_END")
 
 typedef struct { //Ainda não sei bem para que é que vai ser preciso (Neste momento é para passar os comandos atravez de int)
 	unsigned int code; //Passar comandos MONITOR -> SERVIDOR
@@ -69,8 +70,9 @@ typedef struct {
 typedef struct {
 	HANDLE timerStartEvent; //water starts running 
 	HANDLE pauseResumeEvent; //Server comand
-	//HANDLE pauseMonitorComand; //waitable timer to stop the water for x seconds
+	HANDLE endMonitor; 
 	HANDLE printBoard; //Event that informs the monitor to print the board
+
 } Sinc;
 
 BOOL abreFileMap(MemDados* dados);
@@ -84,33 +86,4 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin);
 BOOL CloseSinc(Sinc* sinc);
 BOOL CloseSem(MemDados* dados);
 #endif /*MEMORY_H*/
-
-
-/*
-typedef struct {
-	// Buffer Circular
-	LPHANDLE FileMapAviao;				// File Map para a estrutura do buffer circular
-	BufferCircular* BufCircular;		// Vista para a estrutura do buffer circular
-
-	// Semaforos
-	HANDLE semAviao;					// Semáforo para indicar que o avião pode escrever
-	HANDLE semControl;					// Semáforo para indicar que o controlador tem de ler
-	HANDLE mutex;						// Mutex para garantir acesso único ao buffer circular
-	HANDLE mutexMensagens;				// Mutex para garantir que uma mensagem é lida pelo respetivo avião antes de ser escrito algo por cima
-	// Memória aeroportos
-	LPHANDLE FileMapAeroporto;			// File Map para o array de aeroportos
-	Aeroporto* BufAeroportos;			// Vista para o array de aeroportos
-
-	//Mensagens
-	LPHANDLE FileMapMensagens;			// File Map para a estrutura de comunicação entre o controlador e os aviões
-	Mensagens* BufMens;					// Vista para a estrutura de comunicação entre o controlador e os aviões
-} MemDados;
-
-typedef struct {
-	HANDLE mutex;						// Mutex para garantir que não é escrito nenhum avião pelo controlador enquanto está a ser lido pelo aviao
-	HANDLE eventoAceitaAviao[2];		// Evento para aceitar ou recusar novos aviões e semáforo com o número máximo de aviões que podem ser atendidos pelo controlador
-} Sinc;
-
-
-*/
 

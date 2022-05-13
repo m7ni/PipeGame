@@ -9,10 +9,10 @@ typedef struct {
 	Sinc* sinc;
 }THREADTEC;
 
-typedef struct { //thread thats responsible for showing the board
+typedef struct {			 	
 	DWORD *continua;
 	Sinc* sinc;
-	MemDados* memDados;			//access to data for the sharedMemory
+	MemDados* memDados;			
 }THREADPRINT;
 
 DWORD WINAPI Threadkeyboard(LPVOID param) {
@@ -22,7 +22,7 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE);
 	Sleep(1000);
 	aux.code = 0;
-	_ftprintf(stderr, TEXT("ThreadKeyboard Started\n"));
+	
 	while (*data->continua)
 	{
 	
@@ -30,7 +30,6 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 		_tscanf_s(TEXT("%s"), &comand, SIZE - 1);
 
 		if (*data->continua == 0) {
-			_ftprintf(stderr, TEXT("ThreadKeyboard ended\n"));
 			return 1;
 		}
 
@@ -38,8 +37,6 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 			
 			_ftprintf(stdout, TEXT("-----------> seconds: "));
 			_tscanf_s(TEXT("%d"), &aux.time, sizeof(unsigned int));
-
-		
 			aux.code = 1;
 		}
 		else if (wcscmp(comand, TEXT("insert-block")) == 0) {
@@ -64,17 +61,19 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 		//	//TODO
 		//}
 	}
-	_ftprintf(stderr, TEXT("ThreadKeyboard Ended\n"));
+
 }
 
 DWORD WINAPI ThreadPrintBoard(LPVOID param) {
 	THREADPRINT* data = (THREADPRINT*)param;
 	Board aux;
-	_ftprintf(stderr, TEXT("ThreadPrintBoard Started\n"));
+	
 	while (*data->continua)
 	{
-		WaitForSingleObject(data->sinc->printBoard,INFINITE); //Event
-
+		WaitForSingleObject(data->sinc->printBoard, INFINITE); //Event
+		if (*data->continua == 0) {
+			return 1;
+		}
 		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
 		CopyMemory(&aux, data->memDados->VBoard, sizeof(Board));
 		ReleaseMutex(data->memDados->mutexBoard);
@@ -83,20 +82,34 @@ DWORD WINAPI ThreadPrintBoard(LPVOID param) {
 		Sleep(1000);
 		if (aux.win == 1) {
 
-			_ftprintf(stderr, TEXT("Ganhou\n"));
+			_ftprintf(stderr, TEXT("\n\nYou Won\n"));
 			*data->continua = 0;
 		}
-		else if (aux.win == -1){
+		else if (aux.win == -1) {
 
-			_ftprintf(stderr, TEXT("Perdeu\n"));
+			_ftprintf(stderr, TEXT("\n\nYou Lost\n"));
 			*data->continua = 0;
 		}
+
+	}
+	SetEvent(data->sinc->endMonitor);
+	
+}
+
+DWORD WINAPI ThreadEnd(LPVOID param) {
+	THREADPRINT* data = (THREADPRINT*)param;
+	while (*data->continua)
+	{
+		WaitForSingleObject(data->sinc->endMonitor,INFINITE); //Event
+		SetEvent(data->sinc->timerStartEvent);
+		SetEvent(data->sinc->printBoard);
+			*data->continua = 0;
 	
 	}
 }
 
 int _tmain(int argc, TCHAR* argv[]) {
-	HANDLE hthread[2];
+	HANDLE hthread[3];
 	DWORD contThread = 0;
 	MemDados memDados;
 	THREADTEC threadtec;
@@ -124,7 +137,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	threadtec.memDados = &memDados;
 	threadprint.memDados = &memDados;
 	threadprint.continua = &continua;
-
+	_ftprintf(stderr, TEXT("\n---Monitor Opened---\n\n"));
 	if (argc != 1)
 	{
 		_ftprintf(stdout, TEXT("This Process doesn't require any arguments\n\n"));
@@ -142,7 +155,11 @@ int _tmain(int argc, TCHAR* argv[]) {
 		_ftprintf(stderr, TEXT("Error creating Thread responsible for printing the Board\n"));
 		return -1;
 	}
-
+	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadEnd, &threadprint, 0, NULL)) == NULL) // Thread responsible for printing the board
+	{
+		_ftprintf(stderr, TEXT("Error creating Thread responsible for printing the Board\n"));
+		return -1;
+	}
 	WaitForMultipleObjects(contThread, hthread, TRUE, INFINITE);
 	CloseViewFile(&memDados);
 	CloseHandleMem(&memDados);
