@@ -86,7 +86,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	if (!criaMapViewOfFiles(&KB.memDados)) // Criar Vistas
 		return -1;
-
+	_ftprintf(stderr, TEXT("\n---Servidor Opened---\n\nType 'start' to start the game\n\n"));
 
 	TWater.sinc = &sinc;
 
@@ -140,14 +140,12 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 	TCHAR comand[SIZE];
 	DWORD aux;
 
-	_ftprintf(stderr, TEXT("ThreadKeyboard Started\n"));
 	while (*data->continua)
 	{
 		_ftprintf(stdout, TEXT("Comand: "));
 		_tscanf_s(TEXT("%s"), &comand, SIZE - 1);
 
 		if (*data->continua == 0) {
-			_ftprintf(stderr, TEXT("ThreadKeyboard Ended\n"));
 			return 1;
 		}
 
@@ -156,7 +154,9 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 			_ftprintf(stderr, TEXT("-----------> Started\n"));
 		}
 		else if (wcscmp(comand, TEXT("end")) == 0) {
+			SetEvent(data->sinc->endMonitor);
 			*data->continua = 0;
+			
 		}
 		else if (wcscmp(comand, TEXT("pause")) == 0) {
 			ResetEvent(data->sinc->pauseResumeEvent);
@@ -167,6 +167,7 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 			_ftprintf(stderr, TEXT("-----------> Resumed\n"));
 		}
 	}
+	_ftprintf(stderr, TEXT("ThreadKeyboard ended\n"));
 
 }
 
@@ -174,7 +175,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startig
 	PTHREADTEC data = (PTHREADTEC)param;
 	
 	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
-	Sleep(0); //data->registoDados.actualTime*1000 <- Meter isto quando se entregar
+	Sleep(data->registoDados.actualTime * 1000);
 	data->memDados.flagMonitorComand = 0;
 	Board aux;
 	SetEvent(data->sinc->printBoard);
@@ -202,19 +203,19 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startig
 		ReleaseMutex(data->memDados.mutexBoard);
 
 
-		SetEvent(data->sinc->printBoard); // usar quando queremos avisar o monitor que pode imprimir
+		SetEvent(data->sinc->printBoard); 
 		
 		if (res == 1) {
 			WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
 			data->memDados.VBoard->win = 1;
 			ReleaseMutex(data->memDados.mutexBoard);
-			_ftprintf(stderr, TEXT("Ganhou\n"));
+			_ftprintf(stderr, TEXT("\n\nYou Won\n"));
 			*data->continua = 0;
 			ReleaseSemaphore(data->memDados.semServer, 1, NULL);
 			return 1;
 		}
 		else if (res == -1) {
-			_ftprintf(stderr, TEXT("Perdeu\n"));
+			_ftprintf(stderr, TEXT("\n\nYou Lost\n"));
 			WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
 			data->memDados.VBoard->win = -1;
 			ReleaseMutex(data->memDados.mutexBoard);
@@ -232,13 +233,12 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 	TCHAR comand[SIZE];
 	Comand aux;
 	LARGE_INTEGER liDueTime;
-	_ftprintf(stderr, TEXT("ThreadComandsMonitor Started\n"));
+
 	
 	while (*data->continua)
 	{
 		WaitForSingleObject(data->memDados->semServer, INFINITE);
 		if (*data->continua == 0) {
-			_ftprintf(stderr, TEXT("ThreadComandsMonitor Ended\n"));
 			return 1;
 		}
 		WaitForSingleObject(data->memDados->mutexSEM, INFINITE);
@@ -266,5 +266,4 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 		}
 
 	}
-	_ftprintf(stderr, TEXT("ThreadComandsMonitor Ended\n"));
 }
