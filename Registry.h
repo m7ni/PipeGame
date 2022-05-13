@@ -9,5 +9,6 @@ typedef struct {
 } REGISTO_DADOS;
 
 int verificaChave(REGISTO_DADOS* pdados);
+VOID atualizaChave(DWORD actualSize, DWORD actualTime);
 
 #endif /*REGISTRY_H*/

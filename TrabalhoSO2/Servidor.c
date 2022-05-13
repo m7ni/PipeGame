@@ -67,6 +67,10 @@ int _tmain(int argc, TCHAR* argv[]) {
 			_ftprintf(stdout, TEXT("Size of the Board or Time invalid <MAX Board 20> <MAX time 30>!\n"));
 			return -1;
 		}
+		else {
+			atualizaChave(KB.registoDados.actualSize, KB.registoDados.actualTime > MAX_TIMERWATER);
+		}
+
 	}
 
 	//Cheking if this is the first instance of Servidor

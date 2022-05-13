@@ -9,10 +9,10 @@
 
 #define TAM 256
 
-#define BOARDSIZE 7
+#define BOARDSIZE 15
 #define TIMERWATER 30
 
-int verificaChave(REGISTO_DADOS* pdados,DWORD flag) {
+DWORD verificaChave(REGISTO_DADOS* pdados,DWORD flag) {
 	HKEY chave;
 	LONG lResult;
 	TCHAR chave_nome[TAM], par_valor[TAM], dados[TAM];
@@ -109,4 +109,46 @@ int verificaChave(REGISTO_DADOS* pdados,DWORD flag) {
 
 	RegCloseKey(chave); // fecha a chave
 	return 1;
+}
+
+
+VOID atualizaChave(DWORD actualSize, DWORD actualTime) {
+	
+	HKEY chave;
+	LONG lResult;
+	TCHAR chave_nome[TAM], par_valor[TAM], dados[TAM];
+	DWORD dataSize = sizeof(dados);
+	_stprintf_s(chave_nome, TAM, TEXT("Software\\SO2\\Dados"));
+
+	// Verificar se já existe esta chave registada
+	lResult = RegOpenKeyEx(HKEY_CURRENT_USER, chave_nome, 0, KEY_ALL_ACCESS, &chave);
+
+	if (lResult == ERROR_SUCCESS) {
+		_stprintf_s(par_valor, TAM, TEXT("size"));
+		_stprintf_s(dados, TAM, TEXT("%d"), actualSize);
+		
+		if (RegSetValueEx(chave, par_valor, 0, REG_SZ, dados, sizeof(TCHAR) * _tcslen(par_valor)) == ERROR_SUCCESS) {
+			_tprintf(_T("MapSize updated on registry: % d\n"), actualSize);
+		}
+		else {
+			_tprintf(_T("Erro updating value in Registry"));
+			RegCloseKey(chave);
+			return 0;
+		}
+
+		_stprintf_s(par_valor, TAM, TEXT("time"));
+		_stprintf_s(dados, TAM, TEXT("%d"), actualTime);
+
+		if (RegSetValueEx(chave, par_valor, 0, REG_SZ, dados, sizeof(TCHAR) * _tcslen(par_valor)) == ERROR_SUCCESS) {
+			_tprintf(_T("Water Time updated on registry: % d\n"), actualTime);
+		}
+		else {
+			_tprintf(_T("Erro updating value in Registry"));
+			RegCloseKey(chave);
+			return 0;
+		}
+
+	}
+	RegCloseKey(chave); // fecha a chave
+	
 }
