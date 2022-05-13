@@ -91,7 +91,7 @@ DWORD verificaChave(REGISTO_DADOS* pdados,DWORD flag) {
 			_stprintf_s(par_valor, TAM, TEXT("time"));
 			if (RegQueryValueEx(chave, par_valor, NULL, NULL, (LPBYTE)dados, &dataSize) == ERROR_SUCCESS) {
 
-				if ((aux = _ttoi(dados)) > 0) {
+				if ((aux = _ttoi(dados)) >= 0) {
 					pdados->actualTime = aux;
 				}
 				else {

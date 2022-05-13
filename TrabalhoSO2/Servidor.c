@@ -62,15 +62,17 @@ int _tmain(int argc, TCHAR* argv[]) {
 	{
 		verificaChave(&KB.registoDados);
 	}
-	else if ((KB.registoDados.actualSize = _ttoi(argv[1])) <= 0 && (KB.registoDados.actualTime = _ttoi(argv[2])) <= 0) { //user defines initial values 
-		if (KB.registoDados.actualSize > MAX_BOARDSIZE || KB.registoDados.actualTime > MAX_TIMERWATER) {
-			_ftprintf(stdout, TEXT("Size of the Board or Time invalid <MAX Board 20> <MAX time 30>!\n"));
-			return -1;
-		}
-		else {
-			atualizaChave(KB.registoDados.actualSize, KB.registoDados.actualTime > MAX_TIMERWATER);
-		}
+	else {
+		if ((KB.registoDados.actualSize = _ttoi(argv[1])) >= 0 && (KB.registoDados.actualTime = _ttoi(argv[2])) >= 0) { //user defines initial values 
+			if (KB.registoDados.actualSize > MAX_BOARDSIZE || KB.registoDados.actualTime > MAX_TIMERWATER) {
+				_ftprintf(stdout, TEXT("Size of the Board or Time invalid <MAX Board 20> <MAX time 30>!\n"));
+				return -1;
+			}
+			else {
+				atualizaChave(KB.registoDados.actualSize, KB.registoDados.actualTime > MAX_TIMERWATER);
+			}
 
+		}
 	}
 
 	//Cheking if this is the first instance of Servidor
@@ -179,6 +181,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startig
 	PTHREADTEC data = (PTHREADTEC)param;
 	
 	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
+	_ftprintf(stderr, TEXT("-----------> Starting in %d seconds\n"), data->registoDados.actualTime);
 	Sleep(data->registoDados.actualTime * 1000);
 	data->memDados.flagMonitorComand = 0;
 	Board aux;
