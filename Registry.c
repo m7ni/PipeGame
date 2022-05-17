@@ -123,7 +123,50 @@ VOID atualizaChave(DWORD actualSize, DWORD actualTime) {
 	// Verificar se já existe esta chave registada
 	lResult = RegOpenKeyEx(HKEY_CURRENT_USER, chave_nome, 0, KEY_ALL_ACCESS, &chave);
 
-	if (lResult == ERROR_SUCCESS) {
+	if (lResult != ERROR_SUCCESS)
+	{
+		if (lResult == ERROR_FILE_NOT_FOUND) {
+			_tprintf(TEXT("There where not found previous data.. Creating new values\n"));
+			if (RegCreateKeyEx(HKEY_CURRENT_USER, chave_nome, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &chave, &lResult) == ERROR_SUCCESS) { // Cria a chave
+				if (lResult == REG_CREATED_NEW_KEY) { // key created
+
+					_stprintf_s(par_valor, TAM, TEXT("size"));
+					_stprintf_s(dados, TAM, TEXT("%d"), actualSize);
+
+					if (RegSetValueEx(chave, par_valor, 0, REG_SZ, dados, sizeof(TCHAR) * _tcslen(par_valor)) == ERROR_SUCCESS) {
+						_tprintf(_T("Size of the board: % d\n"), actualSize);
+					}
+					else {
+						_tprintf(_T("Erro creating value in Registry"));
+						RegCloseKey(chave);
+						return 0;
+					}
+
+
+					_stprintf_s(par_valor, TAM, TEXT("time"));
+					_stprintf_s(dados, TAM, TEXT("%d"), actualTime);
+
+					if (RegSetValueEx(chave, par_valor, 0, REG_SZ, dados, sizeof(TCHAR) * _tcslen(par_valor)) == ERROR_SUCCESS) {
+						_tprintf(_T("Timer: %d\n"), actualTime);
+					}
+					else {
+						_tprintf(_T("Erro creating value in Registry"));
+						RegCloseKey(chave);
+						return 0;
+					}
+				}
+			}
+			else { // Error Creating key
+				_tprintf(TEXT("Erro ao criar a chave...\n"));
+				return 0;
+			}
+		}
+		else { // It was not possible to open the key
+			_tprintf(TEXT("Erro a abrir a chave...\n"));
+			return 0;
+		}
+	}
+	else {
 		_stprintf_s(par_valor, TAM, TEXT("size"));
 		_stprintf_s(dados, TAM, TEXT("%d"), actualSize);
 		

@@ -69,7 +69,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 				return -1;
 			}
 			else {
-				atualizaChave(KB.registoDados.actualSize, KB.registoDados.actualTime > MAX_TIMERWATER);
+				atualizaChave(KB.registoDados.actualSize, KB.registoDados.actualTime);
 			}
 
 		}
