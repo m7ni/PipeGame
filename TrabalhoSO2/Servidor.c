@@ -138,7 +138,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	CloseViewFile(&KB.memDados);
 	CloseHandleMem(&KB.memDados);
 	CloseSinc(&sinc);
-	//CloseSem(&KB.memDados);
+	CloseSem(&KB.memDados);
 }
 
 DWORD WINAPI Threadkeyboard(LPVOID param) {
@@ -189,7 +189,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startig
 	while (&data->continua) {
 		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
 
-		Sleep(2000);
+		Sleep(3000);
 
 		if (data->memDados.flagMonitorComand) { //Monitor Comand
 			_ftprintf(stderr, TEXT("-----------> Water Stoped for %d seconds\n"), data->memDados.timeMonitorComand);
@@ -198,7 +198,6 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startig
 		
 		}
 
-		
 		WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
 		CopyMemory(&aux, data->memDados.VBoard, sizeof(Board));
 		ReleaseMutex(data->memDados.mutexBoard);
@@ -211,7 +210,8 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startig
 
 
 		SetEvent(data->sinc->printBoard); 
-		
+		ResetEvent(data->sinc->printBoard);
+
 		if (res == 1) {
 			WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
 			data->memDados.VBoard->win = 1;
@@ -230,9 +230,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startig
 			ReleaseSemaphore(data->memDados.semServer, 1, NULL);
 			return 1;
 		}
-		
 	}
-
 }
 
 DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler do buffer circular os comandos do monitor
@@ -241,7 +239,6 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 	Comand aux;
 	LARGE_INTEGER liDueTime;
 
-	
 	while (*data->continua)
 	{
 		WaitForSingleObject(data->memDados->semServer, INFINITE);
@@ -271,6 +268,5 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 
 			break;
 		}
-
 	}
 }

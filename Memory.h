@@ -13,7 +13,7 @@
 
 #define BUFFERSIZE 255
 #define MAX 20
-#define TAM 3
+#define TAM 15
 #define TAM_COMAND 100
 
 #define FICH_MEM_P_A TEXT("memoriaPartilhadaA")
@@ -40,14 +40,11 @@ typedef struct { //Ainda não sei bem para que é que vai ser preciso (Neste momen
 	unsigned int wallY;
 } Comand;
 
-
-
 typedef struct { //Ainda não sei bem para que é que vai ser preciso (Neste momento é para passar os comandos atravez de int)
 	Comand UserComands[TAM]; //Passar comandos MONITOR -> SERVIDOR
 	unsigned int in;					// Posição de escrita no buffer circular
 	unsigned int out;				// Posição de leitura no buffer circular
 } BufferCircular;
-
 
 typedef struct {
 	LPHANDLE FileBufCircular;				// File Map para a estrutura do buffer circular
@@ -65,7 +62,6 @@ typedef struct {
 	unsigned int timeMonitorComand;
 
 } MemDados;
-
 
 typedef struct {
 	HANDLE timerStartEvent; //water starts running 

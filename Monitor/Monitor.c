@@ -61,7 +61,6 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 		//	//TODO
 		//}
 	}
-
 }
 
 DWORD WINAPI ThreadPrintBoard(LPVOID param) {
@@ -79,7 +78,8 @@ DWORD WINAPI ThreadPrintBoard(LPVOID param) {
 		ReleaseMutex(data->memDados->mutexBoard);
 
 		printBoard(&aux);
-		Sleep(1000);
+		Sleep(2000);
+
 		if (aux.win == 1) {
 
 			_ftprintf(stderr, TEXT("\n\nYou Won\n"));
@@ -93,7 +93,6 @@ DWORD WINAPI ThreadPrintBoard(LPVOID param) {
 
 	}
 	SetEvent(data->sinc->endMonitor);
-	
 }
 
 DWORD WINAPI ThreadEnd(LPVOID param) {

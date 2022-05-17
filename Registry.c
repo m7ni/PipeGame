@@ -9,8 +9,8 @@
 
 #define TAM 256
 
-#define BOARDSIZE 15
-#define TIMERWATER 30
+#define BOARDSIZE 7
+#define TIMERWATER 5
 
 DWORD verificaChave(REGISTO_DADOS* pdados,DWORD flag) {
 	HKEY chave;

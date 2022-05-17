@@ -36,7 +36,7 @@ BOOL CloseViewFile(MemDados* dados) {
 }
 
 BOOL CloseSem(MemDados* dados) {
-    return CloseHandle(dados->mutexSEM) && CloseHandle(dados->semMonitor) && CloseHandle(dados->semServer)&& CloseHandle(dados->mutexBoard);
+    return CloseHandle(dados->mutexSEM) && CloseHandle(dados->semMonitor) && CloseHandle(dados->semServer);
 }
 
 BOOL CloseSinc(Sinc *sinc,DWORD flag) {
@@ -84,7 +84,7 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
         TIMER_START_EVENT);
 
     sinc->printBoard= CreateEvent(NULL,
-        FALSE,
+         TRUE,
         FALSE,
         EVENT_BOARD);
 
