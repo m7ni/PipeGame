@@ -18,19 +18,22 @@ DWORD WINAPI Threadkeyboard(LPVOID param);
 DWORD WINAPI ThreadWaterRunning(LPVOID param);
 DWORD WINAPI ThreadComandsMonitor(LPVOID param);
 DWORD WINAPI ThreadNamedPipes(LPVOID param);
-
-typedef struct {
-	PIPEDATA hPipe[MAX_PLAYERS];
-	HANDLE hEvents[MAX_PLAYERS];
-	HANDLE hMutex;
-	DWORD finish;
-}THREADPIPE;
+DWORD WINAPI ThreadConectClient(LPVOID param);
 
 typedef struct {				//struct that hold the data to the overlapped pipes
 	HANDLE hInstance;
 	OVERLAPPED overlap;
 	BOOL active;
 }PIPEDATA;
+
+typedef struct {
+	DWORD numPlayer;
+	 PIPEDATA hPipe[MAX_PLAYERS];
+	HANDLE hEvents[MAX_PLAYERS];
+	HANDLE hMutex;
+	DWORD continua;
+}THREADPIPE;
+
 
 typedef struct {
 	DWORD* continua;
@@ -54,6 +57,7 @@ typedef struct {
 
 int _tmain(int argc, TCHAR* argv[]) {
 	HANDLE hthread[3];
+	HANDLE threadC;
 	DWORD contThread = 0;
 	DWORD continua = 1;
 	HANDLE hPipe, hThread, hEventTemp;
@@ -70,7 +74,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	KB.continua = &continua;
 	CONSUMER.continua = &continua;
 	TWater.continua = &continua;
-	
+	TP.continua = &continua;
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
@@ -111,7 +115,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	if (!criaMapViewOfFiles(&KB.memDados)) // Criar Vistas
 		return -1;
-	_ftprintf(stderr, TEXT("\n---Servidor Opened---\n\nType 'start' to start the game\n\n"));
+	_ftprintf(stderr, TEXT("\n---Servidor Opened---\n\nWaiting for Players...\n\n"));
 
 	TWater.sinc = &sinc;
 
@@ -126,7 +130,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	KB.memDados.VBufCircular->in = 0;
 	KB.memDados.VBufCircular->out = 0;
 	KB.memDados.VBoard->actualSize = KB.registoDados.actualSize;
-
+	TP.numPlayer = 0;
 	setupBoard(&KB.memDados, KB.registoDados.actualSize);
 
 	CONSUMER.memDados = &KB.memDados;
@@ -146,7 +150,11 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 
 	//Antes de criar a thread da água temos que saber se o jogo vai ser solo ou comp (vamos criar uma ou duas instancias) 
-	
+	TP.hMutex = CreateMutex(NULL, FALSE, NULL);
+	if (TP.hMutex == NULL) {
+		_tprintf(_T("\n[ERRO] Criar Mutex! (CreateMutex)"));
+		exit(-1);
+	}
 	// Named Pipe creation
 	for ( DWORD i = 0; i < MAX_PLAYERS; i++) {
 		_tprintf(_T("[Server] Creating copy of pipe '%s'... (CreateNamedPipe)\n"), PIPE_NAME);
@@ -161,18 +169,25 @@ int _tmain(int argc, TCHAR* argv[]) {
 			exit(-1);
 		}
 		ZeroMemory(&TP.hPipe[i].overlap, sizeof(TP.hPipe[i].overlap));
-		TP.hPipe[i].hInstancia = hPipe;
+		TP.hPipe[i].hInstance = hPipe;
 		TP.hPipe[i].overlap.hEvent = hEventTemp;
 		TP.hEvents[i] = hEventTemp;
-		TP.hPipe[i].activo = FALSE;
+		TP.hPipe[i].active = FALSE;
 
 		if (ConnectNamedPipe(hPipe, &TP.hPipe[i].overlap)) {
 			_tprintf(_T("[ERROR] Server Conection! (ConnectNamedPipe)\n"));
 			exit(-1);
 		}
-
 		//esperar que os jogadores cheguem
 	}
+	//abrir thread para esperar que os jogadores entrem
+	if ((threadC = CreateThread(NULL, 0, ThreadConectClient, &TP, 0, NULL)) == NULL)
+	{
+		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Conection of players\n"));
+		return -1;
+	}
+
+	WaitForSingleObject(threadC, INFINITE); // necessario saber se é solo se comp
 
 	// Thread responsible for the Water
 	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &KB, 0, NULL)) == NULL)
@@ -183,12 +198,40 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 
 	WaitForMultipleObjects(contThread, hthread, TRUE, INFINITE);
+
+	// Dar close dos pipes
 	CloseViewFile(&KB.memDados);
 	CloseHandleMem(&KB.memDados);
 	CloseSinc(&sinc);
 	CloseSem(&KB.memDados);
 }
 
+DWORD WINAPI ThreadConectClient(LPVOID param) {
+	THREADPIPE* data = (THREADPIPE*)param;
+	TCHAR comand[SIZE];
+	DWORD aux,i, nBytes;
+
+	while (&data->continua) {
+		_tprintf(_T("[ Servidor] Waiting for Player...\n"));
+		DWORD result = WaitForMultipleObjects(MAX_PLAYERS, data->hEvents, FALSE, INFINITE);
+		i = result - WAIT_OBJECT_0;
+		if (i >= 0 && i < MAX_PLAYERS) {
+			_tprintf(_T("[Player] Player %d connected...\n"), i);
+
+			if (GetOverlappedResult(data->hPipe[i].hInstance, &data->hPipe[i].overlap, &nBytes, FALSE)) {
+				ResetEvent(data->hEvents[i]);
+				WaitForSingleObject(data->hMutex, INFINITE);
+				data->hPipe[i].active = TRUE;
+				ReleaseMutex(data->hMutex);
+			}
+			data->numPlayer++;
+		}
+		//Neste momento vamos ter que saber se o jogador quer solo ou competitivo, se for solo fazemos break;
+	}
+
+	_ftprintf(stderr, TEXT("ThreadNamedPipes ended\n"));
+
+}
 
 DWORD WINAPI ThreadNamedPipes(LPVOID param) {
 	THREADTEC* data = (THREADTEC*)param;
