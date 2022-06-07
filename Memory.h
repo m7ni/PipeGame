@@ -33,14 +33,18 @@
 #define EVENT_BOARD TEXT("EVENT_BOARD")
 #define EVENT_END TEXT("EVENT_END")
 
-typedef struct { //Ainda não sei bem para que é que vai ser preciso (Neste momento é para passar os comandos atravez de int)
+typedef struct {
 	unsigned int code; //Passar comandos MONITOR -> SERVIDOR
 	unsigned int time; 
 	unsigned int wallX;
 	unsigned int wallY;
 } Comand;
 
-typedef struct { //Ainda não sei bem para que é que vai ser preciso (Neste momento é para passar os comandos atravez de int)
+typedef struct {   //comunicar pelo pipe
+	unsigned int solo;
+} pipe;
+
+typedef struct { 
 	Comand UserComands[TAM]; //Passar comandos MONITOR -> SERVIDOR
 	unsigned int in;					// Posição de escrita no buffer circular
 	unsigned int out;				// Posição de leitura no buffer circular
@@ -68,7 +72,6 @@ typedef struct {
 	HANDLE pauseResumeEvent; //Server comand
 	HANDLE endMonitor; 
 	HANDLE printBoard; //Event that informs the monitor to print the board
-
 } Sinc;
 
 BOOL abreFileMap(MemDados* dados);

@@ -9,7 +9,7 @@
 #include"utils.h"
 
 #define PIPE_NAME TEXT("\\\\.\\pipe\\teste")
-#define SIZE 200
+#define SIZE 256
 #define MAX_BOARDSIZE 20
 #define MAX_TIMERWATER 30
 #define MAX_PLAYERS 2
@@ -209,7 +209,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 DWORD WINAPI ThreadConectClient(LPVOID param) {
 	THREADPIPE* data = (THREADPIPE*)param;
 	TCHAR comand[SIZE];
-	DWORD aux,i, nBytes;
+	DWORD n,i, nBytes,ret;
+	
 
 	while (&data->continua) {
 		_tprintf(_T("[ Servidor] Waiting for Player...\n"));
@@ -225,7 +226,11 @@ DWORD WINAPI ThreadConectClient(LPVOID param) {
 				ReleaseMutex(data->hMutex);
 			}
 			data->numPlayer++;
+			ret = ReadFile(data->hPipe[i].hInstance, comand, sizeof(comand) - sizeof(TCHAR), &n, NULL);
+			comand[n / sizeof(TCHAR)] = '\0';
+
 		}
+
 		//Neste momento vamos ter que saber se o jogador quer solo ou competitivo, se for solo fazemos break;
 	}
 
