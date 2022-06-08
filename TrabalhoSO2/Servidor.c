@@ -31,6 +31,7 @@ typedef struct {
 	 PIPEDATA hPipe[MAX_PLAYERS];
 	HANDLE hEvents[MAX_PLAYERS];
 	HANDLE hMutex;
+	Pipe* pipeData;
 	DWORD continua;
 }THREADPIPE;
 
@@ -67,6 +68,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	THREADWATER TWater;
 	THREADPIPE TP;
 
+	Pipe pipeData;
 	MemDados sem;
 	Board board;
 	Sinc sinc;
@@ -74,7 +76,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	KB.continua = &continua;
 	CONSUMER.continua = &continua;
 	TWater.continua = &continua;
-	TP.continua = &continua;
+	//TP.continua = &continua;
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
@@ -115,13 +117,18 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	if (!criaMapViewOfFiles(&KB.memDados)) // Criar Vistas
 		return -1;
+
+
+	if (!criaSincClient(&pipeData)) // Criar Sinc Pipe
+		return -1;
+
 	_ftprintf(stderr, TEXT("\n---Servidor Opened---\n\nWaiting for Players...\n\n"));
 
 	TWater.sinc = &sinc;
 
 	KB.sinc = &sinc;
 	CONSUMER.sinc = &sinc;
-
+	TP.pipeData = &pipeData;
 	KB.memDados.semMonitor = sem.semMonitor;
 	KB.memDados.semServer = sem.semServer;
 	KB.memDados.mutexSEM = sem.mutexSEM;
@@ -210,10 +217,9 @@ DWORD WINAPI ThreadConectClient(LPVOID param) {
 	THREADPIPE* data = (THREADPIPE*)param;
 	TCHAR comand[SIZE];
 	DWORD n,i, nBytes,ret;
-	
-
-	while (&data->continua) {
-		_tprintf(_T("[ Servidor] Waiting for Player...\n"));
+	Pipe pipeData;
+	while (1) {
+		_tprintf(_T("[Servidor] Waiting for Player...\n"));
 		DWORD result = WaitForMultipleObjects(MAX_PLAYERS, data->hEvents, FALSE, INFINITE);
 		i = result - WAIT_OBJECT_0;
 		if (i >= 0 && i < MAX_PLAYERS) {
@@ -226,16 +232,16 @@ DWORD WINAPI ThreadConectClient(LPVOID param) {
 				ReleaseMutex(data->hMutex);
 			}
 			data->numPlayer++;
-			ret = ReadFile(data->hPipe[i].hInstance, comand, sizeof(comand) - sizeof(TCHAR), &n, NULL);
-			comand[n / sizeof(TCHAR)] = '\0';
-
 		}
+		if (data->numPlayer == 2)
+			break;
 
-		//Neste momento vamos ter que saber se o jogador quer solo ou competitivo, se for solo fazemos break;
+		WaitForSingleObject(data->pipeData->read, INFINITE);
+		ret = ReadFile(data->hPipe[i].hInstance, &pipeData, sizeof(pipeData), &n, NULL);
+		if (pipeData.solo == 1) //we don't need to wait for another player
+			break;
 	}
-
 	_ftprintf(stderr, TEXT("ThreadNamedPipes ended\n"));
-
 }
 
 DWORD WINAPI ThreadNamedPipes(LPVOID param) {

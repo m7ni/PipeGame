@@ -33,6 +33,9 @@
 #define EVENT_BOARD TEXT("EVENT_BOARD")
 #define EVENT_END TEXT("EVENT_END")
 
+#define EVENT_READ_ONE TEXT("EVENT_READ_ONE")
+#define EVENT_READ_TWO TEXT("EVENT_READ_ONE")
+
 typedef struct {
 	unsigned int code; //Passar comandos MONITOR -> SERVIDOR
 	unsigned int time; 
@@ -42,7 +45,8 @@ typedef struct {
 
 typedef struct {   //comunicar pelo pipe
 	unsigned int solo;
-} pipe;
+	HANDLE read;
+} Pipe;
 
 typedef struct { 
 	Comand UserComands[TAM]; //Passar comandos MONITOR -> SERVIDOR
@@ -81,7 +85,7 @@ BOOL CloseViewFile(MemDados* dados);
 BOOL criaSincBuffer( MemDados* sem);
 BOOL criaMapViewOfFiles(MemDados* dados);
 BOOL criaSincGeral(Sinc* sinc, DWORD origin);
-
+BOOL criaSincClient(Pipe* dados);
 BOOL CloseSinc(Sinc* sinc);
 BOOL CloseSem(MemDados* dados);
 #endif /*MEMORY_H*/

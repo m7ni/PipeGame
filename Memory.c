@@ -100,6 +100,17 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
     return TRUE;
 }
 
+BOOL criaSincClient(Pipe * dados) {
+    dados->read = CreateEvent(NULL,
+        TRUE,
+        FALSE,
+        EVENT_READ_ONE);
+    if (dados->read == NULL) {
+        _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
+        return FALSE;
+    }
+}
+
 BOOL criaMapViewOfFiles(MemDados* dados) { 
 
     if (dados->FileBufCircular == NULL || dados->FileMapBoard == NULL) {

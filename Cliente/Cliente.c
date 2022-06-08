@@ -1,5 +1,7 @@
 #include <windows.h>
 #include <tchar.h>
+#include "../Memory.h";
+#define PIPE_NAME TEXT("\\\\.\\pipe\\teste")
 /* ===================================================== */
 /* Programa base (esqueleto) para aplicações Windows     */
 /* ===================================================== */
@@ -18,6 +20,8 @@ LRESULT CALLBACK TrataEventos(HWND, UINT, WPARAM, LPARAM);
 // Nome da classe da janela (para programas de uma só janela, normalmente este nome é 
 // igual ao do próprio programa) "szprogName" é usado mais abaixo na definição das 
 // propriedades do objecto janela
+
+
 TCHAR szProgName[] = TEXT("Base");
 
 // ============================================================================
@@ -40,6 +44,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	MSG lpMsg;		// MSG é uma estrutura definida no Windows para as mensagens
 	WNDCLASSEX wcApp;	// WNDCLASSEX é uma estrutura cujos membros servem para 
 			  // definir as características da classe da janela
+	HANDLE hThread;
+	HANDLE hPipe;
+
 
 	// ============================================================================
 	// 1. Definição das características da janela "wcApp" 
@@ -73,23 +80,18 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	// "hbrBackground" = handler para "brush" de pintura do fundo da janela. Devolvido por
 	// "GetStockObject".Neste caso o fundo será branco
 
-	// ============================================================================
-	// 2. Registar a classe "wcApp" no Windows
-	// ============================================================================
+
 	if (!RegisterClassEx(&wcApp))
 		return(0);
 
-	// ============================================================================
-	// 3. Criar a janela
-	// ============================================================================
 	hWnd = CreateWindow(
 		szProgName,			// Nome da janela (programa) definido acima
-		TEXT("Exemplo de Janela Principal em C"),// Texto que figura na barra do título
+		TEXT("PLAYER"),// Texto que figura na barra do título
 		WS_OVERLAPPEDWINDOW,	// Estilo da janela (WS_OVERLAPPED= normal)
-		CW_USEDEFAULT,		// Posição x pixels (default=à direita da última)
-		CW_USEDEFAULT,		// Posição y pixels (default=abaixo da última)
-		CW_USEDEFAULT,		// Largura da janela (em pixels)
-		CW_USEDEFAULT,		// Altura da janela (em pixels)
+		400,		// Posição x pixels (default=à direita da última)
+		200,		// Posição y pixels (default=abaixo da última)
+		300,		// Largura da janela (em pixels)
+		400,		// Altura da janela (em pixels)
 		(HWND)HWND_DESKTOP,	// handle da janela pai (se se criar uma a partir de
 						// outra) ou HWND_DESKTOP se a janela for a primeira, 
 						// criada a partir do "desktop"
@@ -136,6 +138,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 					   // tratamento da janela, CALLBACK TrataEventos (abaixo)
 	}
 
+
 	// ============================================================================
 	// 6. Fim do programa
 	// ============================================================================
@@ -165,9 +168,53 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 // ============================================================================
 
 LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam) {
+	static Pipe pipeData;
+	static HANDLE hPipe;
+	DWORD n;
 	switch (messg) {
-	case WM_DESTROY:	// Destruir a janela e terminar o programa 
-						// "PostQuitMessage(Exit Status)"		
+	case WM_CREATE:
+
+		if (!criaSincClient(&pipeData)) // Criar Sinc Pipe
+			return -1;
+
+		_tprintf(TEXT("[LEITOR] Esperar pelo pipe '%s' (WaitNamedPipe)\n"),
+			PIPE_NAME);
+		if (!WaitNamedPipe(PIPE_NAME, NMPWAIT_WAIT_FOREVER)) {
+			_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (WaitNamedPipe)\n"), PIPE_NAME);
+			exit(-1);
+		}
+		_tprintf(TEXT("[LEITOR] Ligação ao pipe do escritor... (CreateFile)\n"));
+		hPipe = CreateFile(PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL, NULL);
+		if (hPipe == NULL) {
+			_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (CreateFile)\n"), PIPE_NAME);
+			exit(-1);
+		}
+		_tprintf(TEXT("[LEITOR] Liguei-me...\n"));
+
+		pipeData.solo = 0;
+		if (MessageBox(hWnd, TEXT("TIPO DE JOGO?"),
+			TEXT("SOLO"), MB_ICONQUESTION | MB_YESNO) == IDYES)
+		{
+			pipeData.solo = 1;
+		}
+		
+		if (!WriteFile(hPipe, &pipeData, sizeof(pipeData), &n, NULL))
+			_tprintf(_T("[ERRO] Escrever no pipe! (WriteFile)\n"));
+
+		SetEvent(pipeData.read);//telling the server that he can read
+		break;
+	case WM_CLOSE:
+		if (MessageBox(hWnd, TEXT("Tem a certeza que quer sair?"),
+			TEXT("Confirmação"), MB_ICONQUESTION | MB_YESNO) == IDYES)
+		{
+
+			//fazer os closes
+			DestroyWindow(hWnd);
+		}
+		break;
+	case WM_DESTROY: // Destruir a janela e terminar o programa 
+	// "PostQuitMessage(Exit Status)"
 		PostQuitMessage(0);
 		break;
 	default:
