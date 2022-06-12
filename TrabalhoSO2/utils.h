@@ -10,6 +10,6 @@
 
 
 LARGE_INTEGER intToLargeInt(int i);
-void setupBoard(MemDados* aux, DWORD actualSize);
-void printBoard(MemDados* dados);
-DWORD putWall(Board* aux, DWORD posX, DWORD posY);
+void setupBoard(MemDados* aux, DWORD actualSize,DWORD p);
+void printBoard(MemDados* dados, DWORD p);
+DWORD putWall(Board* aux, DWORD posX, DWORD posY, DWORD p);

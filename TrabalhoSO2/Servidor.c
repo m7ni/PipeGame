@@ -67,7 +67,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 	DWORD continua = 1;
 	HANDLE hPipe, hThread, hEventTemp;
 
-	THREADTEC KB;
+	THREADTEC KB1;
+	THREADTEC KB2;
 	THREADCONS CONSUMER;
 	THREADWATER TWater;
 	THREADPIPE TP;
@@ -77,7 +78,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	Board board;
 	Sinc sinc;
 
-	KB.continua = &continua;
+	KB1.continua = &continua;
 	CONSUMER.continua = &continua;
 	TWater.continua = &continua;
 	//TP.continua = &continua;
@@ -89,23 +90,23 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	if (argc != 3) //user doesn't define inital values, so we go to registry to obtain them
 	{
-		verificaChave(&KB.registoDados);
+		verificaChave(&KB1.registoDados);
 	}
 	else {
-		if ((KB.registoDados.actualSize = _ttoi(argv[1])) >= 0 && (KB.registoDados.actualTime = _ttoi(argv[2])) >= 0) { //user defines initial values 
-			if (KB.registoDados.actualSize > MAX_BOARDSIZE || KB.registoDados.actualTime > MAX_TIMERWATER) {
+		if ((KB1.registoDados.actualSize = _ttoi(argv[1])) >= 0 && (KB1.registoDados.actualTime = _ttoi(argv[2])) >= 0) { //user defines initial values 
+			if (KB1.registoDados.actualSize > MAX_BOARDSIZE || KB1.registoDados.actualTime > MAX_TIMERWATER) {
 				_ftprintf(stdout, TEXT("Size of the Board or Time invalid <MAX Board 20> <MAX time 30>!\n"));
 				return -1;
 			}
 			else {
-				atualizaChave(KB.registoDados.actualSize, KB.registoDados.actualTime);
+				atualizaChave(KB1.registoDados.actualSize, KB1.registoDados.actualTime);
 			}
 
 		}
 	}
 
 	//Cheking if this is the first instance of Servidor
-	if (abreFileMap(&KB.memDados)) {
+	if (abreFileMap(&KB1.memDados)) {
 		_ftprintf(stderr, TEXT("A Servidor is already open. Closing...\n"));
 		return -1;
 	}
@@ -113,13 +114,13 @@ int _tmain(int argc, TCHAR* argv[]) {
 	if (!criaSincBuffer(&sem))
 		return -1;
 
-	if (!criaFileMap(&KB.memDados)) // Criar FileMaps
+	if (!criaFileMap(&KB1.memDados)) // Criar FileMaps
 		return -1;
 
 	if (!criaSincGeral(&sinc, 1)) // Criar Vistas
 		return -1;
 
-	if (!criaMapViewOfFiles(&KB.memDados)) // Criar Vistas
+	if (!criaMapViewOfFiles(&KB1.memDados)) // Criar Vistas
 		return -1;
 
 
@@ -130,25 +131,25 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	TWater.sinc = &sinc;
 
-	KB.sinc = &sinc;
+	KB1.sinc = &sinc;
 	CONSUMER.sinc = &sinc;
 	TP.pipeData = &pipeData;
-	KB.memDados.semMonitor = sem.semMonitor;
-	KB.memDados.semServer = sem.semServer;
-	KB.memDados.mutexSEM = sem.mutexSEM;
-	KB.memDados.flagMonitorComand = 0;
-	KB.memDados.timeMonitorComand = 0;
-	KB.memDados.VBufCircular->in = 0;
-	KB.memDados.VBufCircular->out = 0;
-	KB.memDados.VBoard->actualSize = KB.registoDados.actualSize;
+	KB1.memDados.semMonitor = sem.semMonitor;
+	KB1.memDados.semServer = sem.semServer;
+	KB1.memDados.mutexSEM = sem.mutexSEM;
+	KB1.memDados.flagMonitorComand = 0;
+	KB1.memDados.timeMonitorComand = 0;
+	KB1.memDados.VBufCircular->in = 0;
+	KB1.memDados.VBufCircular->out = 0;
+	KB1.memDados.VBoard->actualSize = KB1.registoDados.actualSize;
 	TP.numPlayer = 0;
-	setupBoard(&KB.memDados, KB.registoDados.actualSize);
 
-	CONSUMER.memDados = &KB.memDados;
-	TWater.memDados = &KB.memDados;
+
+	CONSUMER.memDados = &KB1.memDados;
+	TWater.memDados = &KB1.memDados;
 	// Thread responsible for the keyboard
 	
-	if ((hthread[contThread++] = CreateThread(NULL, 0, Threadkeyboard, &KB, 0, NULL)) == NULL) {
+	if ((hthread[contThread++] = CreateThread(NULL, 0, Threadkeyboard, &KB1, 0, NULL)) == NULL) {
 		_ftprintf(stderr, TEXT("Error creating Thread responsible for the keyboard\n"));
 		return -1;
 	}
@@ -204,10 +205,12 @@ int _tmain(int argc, TCHAR* argv[]) {
 	_ftprintf(stderr, TEXT("já temos a resposta do jogador ->> %d\n"),TP.pipeData->solo);
 
 
+	setupBoard(&KB1.memDados, KB1.registoDados.actualSize, TP.pipeData->solo); //dependendo de ser solo ou comp, vai criar um ou dois tabuleiros
+
 	// Thread responsible for the Water
-	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &KB, 0, NULL)) == NULL)
+	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &KB1, 0, NULL)) == NULL)
 	{
-		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Monitor input\n"));
+		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Water\n"));
 		return -1;
 	}
 
@@ -215,10 +218,10 @@ int _tmain(int argc, TCHAR* argv[]) {
 	WaitForMultipleObjects(contThread, hthread, TRUE, INFINITE);
 
 	// Dar close dos pipes
-	CloseViewFile(&KB.memDados);
-	CloseHandleMem(&KB.memDados);
+	CloseViewFile(&KB1.memDados);
+	CloseHandleMem(&KB1.memDados);
 	CloseSinc(&sinc);
-	CloseSem(&KB.memDados);
+	CloseSem(&KB1.memDados);
 }
 
 DWORD WINAPI ThreadConectClient(LPVOID param) {
