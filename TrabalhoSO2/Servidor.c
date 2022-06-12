@@ -162,8 +162,9 @@ int _tmain(int argc, TCHAR* argv[]) {
 		_tprintf(_T("\n[ERRO] Criar Mutex! (CreateMutex)"));
 		exit(-1);
 	}
+
 	// Named Pipe creation
-	for ( DWORD i = 0; i < MAX_PLAYERS; i++) {
+	for ( DWORD i = 0; i < MAX_PLAYERS; i++) { //Creating the copys of the pipe, one for each Client
 		_tprintf(_T("[Server] Creating copy of pipe '%s'... (CreateNamedPipe)\n"), PIPE_NAME);
 		hEventTemp = CreateEvent(NULL, TRUE, FALSE, NULL);
 		if (hEventTemp == NULL) {
@@ -187,6 +188,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 		}
 		//esperar que os jogadores cheguem
 	}
+
 	//abrir thread para esperar que os jogadores entrem
 	if ((threadC = CreateThread(NULL, 0, ThreadConectClient, &TP, 0, NULL)) == NULL)
 	{
@@ -195,6 +197,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 
 	WaitForSingleObject(threadC, INFINITE); // necessario saber se é solo se comp
+	_ftprintf(stderr, TEXT("já temos a resposta do jogador _>> %d\n"),TP.pipeData->solo);
+
 
 	// Thread responsible for the Water
 	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &KB, 0, NULL)) == NULL)
@@ -232,14 +236,20 @@ DWORD WINAPI ThreadConectClient(LPVOID param) {
 				ReleaseMutex(data->hMutex);
 			}
 			data->numPlayer++;
+			data->pipeData->nPlayer = data->numPlayer;
 		}
+		WriteFile(data->hPipe[i].hInstance, data->pipeData, sizeof(Pipe), &n, NULL);
+
 		if (data->numPlayer == 2)
 			break;
 
-		WaitForSingleObject(data->pipeData->read, INFINITE);
-		ret = ReadFile(data->hPipe[i].hInstance, &pipeData, sizeof(pipeData), &n, NULL);
-		if (pipeData.solo == 1) //we don't need to wait for another player
-			break;
+		//WaitForSingleObject(data->pipeData->read, INFINITE);
+
+
+		ret = ReadFile(data->hPipe[i].hInstance, data->pipeData, sizeof(Pipe), &n, NULL);
+		if (data->pipeData->solo == 1) 
+			break; //we don't need to wait for another player
+		
 	}
 	_ftprintf(stderr, TEXT("ThreadNamedPipes ended\n"));
 }

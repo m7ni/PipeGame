@@ -167,10 +167,17 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 // WM_DESTROY, WM_CHAR, WM_KEYDOWN, WM_PAINT...) definidas em windows.h
 // ============================================================================
 
+
+
+
+
+
+
+
 LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam) {
 	static Pipe pipeData;
 	static HANDLE hPipe;
-	DWORD n;
+	DWORD n,ret;
 	switch (messg) {
 	case WM_CREATE:
 
@@ -191,18 +198,26 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			exit(-1);
 		}
 		_tprintf(TEXT("[LEITOR] Liguei-me...\n"));
+		ret = ReadFile(hPipe, &pipeData, sizeof(Pipe), &n, NULL);
 
-		pipeData.solo = 0;
-		if (MessageBox(hWnd, TEXT("TIPO DE JOGO?"),
-			TEXT("SOLO"), MB_ICONQUESTION | MB_YESNO) == IDYES)
-		{
-			pipeData.solo = 1;
-		}
+		if (pipeData.nPlayer == 1) {
+			pipeData.solo = 0;
+			if (MessageBox(hWnd, TEXT("O jogo vai ser solo ?"),
+				TEXT("TIPO DE JOGO?"), MB_ICONQUESTION | MB_YESNO) == IDYES)
+			{
+				pipeData.solo = 1;
+			}
 		
-		if (!WriteFile(hPipe, &pipeData, sizeof(pipeData), &n, NULL))
-			_tprintf(_T("[ERRO] Escrever no pipe! (WriteFile)\n"));
+			if (!WriteFile(hPipe, &pipeData, sizeof(Pipe), &n, NULL))
+				_tprintf(_T("[ERRO] Escrever no pipe! (WriteFile)\n"));
+		}else {
+			_tprintf(_T("És o Player[2], vais jogar um competitivo\n"));
+		}
 
-		SetEvent(pipeData.read);//telling the server that he can read
+
+		//SetEvent(pipeData.read);//telling the server that he can read
+
+		
 		break;
 	case WM_CLOSE:
 		if (MessageBox(hWnd, TEXT("Tem a certeza que quer sair?"),
