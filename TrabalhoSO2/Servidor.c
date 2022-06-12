@@ -35,7 +35,6 @@ typedef struct {
 	DWORD continua;
 }THREADPIPE;
 
-
 typedef struct {
 	DWORD* continua;
 	MemDados* memDados;			//access to data for the sharedMemory
@@ -43,6 +42,11 @@ typedef struct {
 }THREADWATER;
 
 typedef struct {
+	DWORD playerID;
+	PIPEDATA hPipe;
+	HANDLE hEventPipe;
+	HANDLE hMutexPipe;
+
 	DWORD* continua;
 	REGISTO_DADOS registoDados; //access to data from the registry
 	MemDados memDados;			//access to data for the sharedMemory
@@ -197,7 +201,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 
 	WaitForSingleObject(threadC, INFINITE); // necessario saber se é solo se comp
-	_ftprintf(stderr, TEXT("já temos a resposta do jogador _>> %d\n"),TP.pipeData->solo);
+	_ftprintf(stderr, TEXT("já temos a resposta do jogador ->> %d\n"),TP.pipeData->solo);
 
 
 	// Thread responsible for the Water
