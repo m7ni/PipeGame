@@ -168,12 +168,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 // ============================================================================
 
 
-
-
-
-
-
-
 LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam) {
 	static Pipe pipeData;
 	static HANDLE hPipe;
@@ -186,8 +180,8 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 
 		_tprintf(TEXT("[LEITOR] Esperar pelo pipe '%s' (WaitNamedPipe)\n"),
 			PIPE_NAME);
-		if (!WaitNamedPipe(PIPE_NAME, NMPWAIT_WAIT_FOREVER)) {
-			_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (WaitNamedPipe)\n"), PIPE_NAME);
+		if (!WaitNamedPipe(PIPE_NAME, 5000)) {
+			MessageBox(hWnd, TEXT("Não é possivel ligar ao servidor, tenta de novo depois"), TEXT("Informação"), MB_ICONEXCLAMATION | MB_OK);
 			exit(-1);
 		}
 		_tprintf(TEXT("[LEITOR] Ligação ao pipe do escritor... (CreateFile)\n"));
@@ -202,8 +196,8 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 
 		if (pipeData.nPlayer == 1) {
 			pipeData.solo = 0;
-			if (MessageBox(hWnd, TEXT("O jogo vai ser solo ?"),
-				TEXT("TIPO DE JOGO?"), MB_ICONQUESTION | MB_YESNO) == IDYES)
+			if (MessageBox(hWnd, TEXT("És o Player UM\nO jogo vai ser solo ?"),
+				TEXT("TIPO DE JOGO?"), MB_ICONEXCLAMATION | MB_YESNO) == IDYES)
 			{
 				pipeData.solo = 1;
 			}
@@ -211,19 +205,20 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			if (!WriteFile(hPipe, &pipeData, sizeof(Pipe), &n, NULL))
 				_tprintf(_T("[ERRO] Escrever no pipe! (WriteFile)\n"));
 		}else {
-			_tprintf(_T("És o Player[2], vais jogar um competitivo\n"));
+			MessageBox(hWnd, TEXT("És o Player[2], vais jogar um competitivo"),TEXT("Informação"), MB_ICONEXCLAMATION | MB_OK);
 		}
-
-
-		//SetEvent(pipeData.read);//telling the server that he can read
-
-		
+		ret = ReadFile(hPipe, &pipeData, sizeof(Pipe), &n, NULL);
+		MessageBox(hWnd, TEXT("aaaaaaaaaaaaaaaaaaaaaaaaaaaa%d"), TEXT("Informação"), MB_ICONEXCLAMATION | MB_OK);
 		break;
+	case WM_PAINT:
+
+
+		break;
+
 	case WM_CLOSE:
 		if (MessageBox(hWnd, TEXT("Tem a certeza que quer sair?"),
 			TEXT("Confirmação"), MB_ICONQUESTION | MB_YESNO) == IDYES)
 		{
-
 			//fazer os closes
 			DestroyWindow(hWnd);
 		}

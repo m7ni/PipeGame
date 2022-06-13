@@ -46,6 +46,7 @@ typedef struct {
 typedef struct {   //comunicar pelo pipe
 	unsigned int nPlayer;
 	unsigned int solo;
+	Board board;
 	HANDLE read;
 } Pipe;
 

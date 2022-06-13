@@ -133,8 +133,6 @@ void setupBoard(MemDados* aux, DWORD actualSize, DWORD numPlayers) {
 
 DWORD insertWater(Board* board,DWORD p) {
 
-
-
 	if (board->player[p].lastInsert == 'B') {
 
 		board->player[p].lastWaterXY[0] = board->player[p].begin[0];
@@ -412,8 +410,6 @@ DWORD insertWater(Board* board,DWORD p) {
 }
 
 void printBoard(Board* aux,DWORD p) {
-
-	
 
 	for (DWORD l = 0; l < p; l++) {
 		_tprintf(TEXT(" -----------------PLAYER[p]-----------------"));

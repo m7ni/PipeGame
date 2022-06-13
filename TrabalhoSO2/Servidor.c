@@ -15,11 +15,11 @@
 #define MAX_PLAYERS 2
 
 DWORD WINAPI Threadkeyboard(LPVOID param);
-DWORD WINAPI ThreadWaterRunning(LPVOID param);
+DWORD WINAPI ThreadInsertPipe(LPVOID param);
 DWORD WINAPI ThreadComandsMonitor(LPVOID param);
 DWORD WINAPI ThreadNamedPipes(LPVOID param);
 DWORD WINAPI ThreadConectClient(LPVOID param);
-
+DWORD WINAPI ThreadWaterRunning(LPVOID param);
 typedef struct {				//struct that hold the data to the overlapped pipes
 	HANDLE hInstance;
 	OVERLAPPED overlap;
@@ -27,25 +27,36 @@ typedef struct {				//struct that hold the data to the overlapped pipes
 }PIPEDATA;
 
 typedef struct {
-	DWORD numPlayer;
-	 PIPEDATA hPipe[MAX_PLAYERS];
-	HANDLE hEvents[MAX_PLAYERS];
-	HANDLE hMutex;
-	Pipe* pipeData;
-	DWORD continua;
-}THREADPIPE;
-
-typedef struct {
 	DWORD* continua;
 	MemDados* memDados;			//access to data for the sharedMemory
 	Sinc* sinc;
-}THREADWATER;
+
+	HANDLE mutexP;
+	HANDLE eventPipe;
+	PIPEDATA hPipe;          //Handlers especificos para o pipe desse player
+	Pipe* pipeData;			//Estrutura que é enviada atraves do pipe
+}THREADGAME;
 
 typedef struct {
-	DWORD playerID;
-	PIPEDATA hPipe;
-	HANDLE hEventPipe;
-	HANDLE hMutexPipe;
+	DWORD numPlayer;
+	PIPEDATA hPipe[MAX_PLAYERS];
+	HANDLE hEvents[MAX_PLAYERS];
+	HANDLE hMutex;
+	Pipe* pipeDataInitial;
+
+	MemDados* memDados;			//access to data for the sharedMemory
+	Sinc* sinc;
+
+	DWORD timeR; //access to data from the registry
+	DWORD* continua;
+
+	THREADGAME* playerServ[2];
+}THREADPIPE, * PTHREADPIPE;
+
+
+
+typedef struct {
+	DWORD numPlayer;
 
 	DWORD* continua;
 	REGISTO_DADOS registoDados; //access to data from the registry
@@ -67,21 +78,26 @@ int _tmain(int argc, TCHAR* argv[]) {
 	DWORD continua = 1;
 	HANDLE hPipe, hThread, hEventTemp;
 
-	THREADTEC KB1;
-	THREADTEC KB2;
-	THREADCONS CONSUMER;
-	THREADWATER TWater;
+	THREADTEC KB;			//enviada para a thread quer trata do teclado
+	THREADCONS CONSUMER;	//a ser enviada para receber os comandos do monitor
+	
 	THREADPIPE TP;
 
-	Pipe pipeData;
+	THREADGAME TG1;			//a ser enviada para a Thread que insere peças
+	Pipe pipeData1;
+
+	THREADGAME TG2;
+	Pipe pipeData2;
+
 	MemDados sem;
 	Board board;
 	Sinc sinc;
 
-	KB1.continua = &continua;
+	KB.continua = &continua;
 	CONSUMER.continua = &continua;
-	TWater.continua = &continua;
-	//TP.continua = &continua;
+	TG1.continua = &continua;
+	TG2.continua = &continua;
+	TP.continua = &continua;
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
@@ -90,23 +106,23 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	if (argc != 3) //user doesn't define inital values, so we go to registry to obtain them
 	{
-		verificaChave(&KB1.registoDados);
+		verificaChave(&KB.registoDados);
 	}
 	else {
-		if ((KB1.registoDados.actualSize = _ttoi(argv[1])) >= 0 && (KB1.registoDados.actualTime = _ttoi(argv[2])) >= 0) { //user defines initial values 
-			if (KB1.registoDados.actualSize > MAX_BOARDSIZE || KB1.registoDados.actualTime > MAX_TIMERWATER) {
+		if ((KB.registoDados.actualSize = _ttoi(argv[1])) >= 0 && (KB.registoDados.actualTime = _ttoi(argv[2])) >= 0) { //user defines initial values 
+			if (KB.registoDados.actualSize > MAX_BOARDSIZE || KB.registoDados.actualTime > MAX_TIMERWATER) {
 				_ftprintf(stdout, TEXT("Size of the Board or Time invalid <MAX Board 20> <MAX time 30>!\n"));
 				return -1;
 			}
 			else {
-				atualizaChave(KB1.registoDados.actualSize, KB1.registoDados.actualTime);
+				atualizaChave(KB.registoDados.actualSize, KB.registoDados.actualTime);
 			}
 
 		}
 	}
 
 	//Cheking if this is the first instance of Servidor
-	if (abreFileMap(&KB1.memDados)) {
+	if (abreFileMap(&KB.memDados)) {
 		_ftprintf(stderr, TEXT("A Servidor is already open. Closing...\n"));
 		return -1;
 	}
@@ -114,42 +130,47 @@ int _tmain(int argc, TCHAR* argv[]) {
 	if (!criaSincBuffer(&sem))
 		return -1;
 
-	if (!criaFileMap(&KB1.memDados)) // Criar FileMaps
+	if (!criaFileMap(&KB.memDados)) // Criar FileMaps
 		return -1;
 
 	if (!criaSincGeral(&sinc, 1)) // Criar Vistas
 		return -1;
 
-	if (!criaMapViewOfFiles(&KB1.memDados)) // Criar Vistas
+	if (!criaMapViewOfFiles(&KB.memDados)) // Criar Vistas
 		return -1;
 
 
-	if (!criaSincClient(&pipeData)) // Criar Sinc Pipe
-		return -1;
+	/*if (!criaSincClient(&pipeData)) // Criar Sinc Pipe
+		return -1;*/
 
 	_ftprintf(stderr, TEXT("\n---Servidor Opened---\n\nWaiting for Players...\n\n"));
 
-	TWater.sinc = &sinc;
+	TG1.sinc = &sinc;
+	TG2.sinc = &sinc;
 
-	KB1.sinc = &sinc;
+	KB.sinc = &sinc;
 	CONSUMER.sinc = &sinc;
-	TP.pipeData = &pipeData;
-	KB1.memDados.semMonitor = sem.semMonitor;
-	KB1.memDados.semServer = sem.semServer;
-	KB1.memDados.mutexSEM = sem.mutexSEM;
-	KB1.memDados.flagMonitorComand = 0;
-	KB1.memDados.timeMonitorComand = 0;
-	KB1.memDados.VBufCircular->in = 0;
-	KB1.memDados.VBufCircular->out = 0;
-	KB1.memDados.VBoard->actualSize = KB1.registoDados.actualSize;
+	TP.pipeDataInitial = &pipeData1;
+	TP.sinc = &sinc;
+	KB.memDados.semMonitor = sem.semMonitor;
+	KB.memDados.semServer = sem.semServer;
+	KB.memDados.mutexSEM = sem.mutexSEM;
+	KB.memDados.flagMonitorComand = 0;
+	KB.memDados.timeMonitorComand = 0;
+	KB.memDados.VBufCircular->in = 0;
+	KB.memDados.VBufCircular->out = 0;
+	KB.memDados.VBoard->actualSize = KB.registoDados.actualSize;
 	TP.numPlayer = 0;
+	TP.timeR = KB.registoDados.actualTime;
+	
+	CONSUMER.memDados = &KB.memDados;
+	TG1.memDados = &KB.memDados;
+	TG2.memDados = &KB.memDados;
+	TP.memDados = &KB.memDados;
 
-
-	CONSUMER.memDados = &KB1.memDados;
-	TWater.memDados = &KB1.memDados;
 	// Thread responsible for the keyboard
 	
-	if ((hthread[contThread++] = CreateThread(NULL, 0, Threadkeyboard, &KB1, 0, NULL)) == NULL) {
+	if ((hthread[contThread++] = CreateThread(NULL, 0, Threadkeyboard, &KB, 0, NULL)) == NULL) {
 		_ftprintf(stderr, TEXT("Error creating Thread responsible for the keyboard\n"));
 		return -1;
 	}
@@ -187,6 +208,9 @@ int _tmain(int argc, TCHAR* argv[]) {
 		TP.hEvents[i] = hEventTemp;
 		TP.hPipe[i].active = FALSE;
 
+		TP.player[0] = &TG1;
+		TP.player[1] = &TG2;
+
 		if (ConnectNamedPipe(hPipe, &TP.hPipe[i].overlap)) {
 			_tprintf(_T("[ERROR] Server Conection! (ConnectNamedPipe)\n"));
 			exit(-1);
@@ -202,33 +226,149 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 
 	WaitForSingleObject(threadC, INFINITE); // necessario saber se é solo se comp
-	_ftprintf(stderr, TEXT("já temos a resposta do jogador ->> %d\n"),TP.pipeData->solo);
+	_ftprintf(stderr, TEXT("já temos a resposta do jogador ->> %d\n"),TP.pipeDataInitial->solo);
 
 
-	setupBoard(&KB1.memDados, KB1.registoDados.actualSize, TP.pipeData->solo); //dependendo de ser solo ou comp, vai criar um ou dois tabuleiros
+	setupBoard(&KB.memDados, KB.registoDados.actualSize, TP.pipeDataInitial->solo); //dependendo de ser solo ou comp, vai criar um ou dois tabuleiros
 
-	// Thread responsible for the Water
-	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &KB1, 0, NULL)) == NULL)
+	//Thread responsible for the Water
+	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &TP, 0, NULL)) == NULL)
 	{
 		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Water\n"));
 		return -1;
 	}
 
+	TG1.hPipe = TP.hPipe[1];
+	TG1.eventPipe = TP.hEvents[1];
+	TG1.mutexP = TP.hMutex;
+	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadInsertPipe, &TG1, 0, NULL)) == NULL)
+	{
+		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Pipes\n"));
+		return -1;
+	}
+
+	if (TP.pipeDataInitial->nPlayer == 2) {
+		TG2.hPipe = TP.hPipe[2];
+		TG2.eventPipe = TP.hEvents[2];
+		TG2.mutexP = TP.hMutex;
+		if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadInsertPipe, &TG2, 0, NULL)) == NULL)
+		{
+			_ftprintf(stderr, TEXT("Error creating Thread responsible for thePipes\n"));
+			return -1;
+		}
+	}
+	
+
+
 
 	WaitForMultipleObjects(contThread, hthread, TRUE, INFINITE);
 
 	// Dar close dos pipes
-	CloseViewFile(&KB1.memDados);
-	CloseHandleMem(&KB1.memDados);
+	CloseViewFile(&KB.memDados);
+	CloseHandleMem(&KB.memDados);
 	CloseSinc(&sinc);
-	CloseSem(&KB1.memDados);
+	CloseSem(&KB.memDados);
 }
+
+DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
+	PTHREADPIPE data = (PTHREADPIPE)param;
+	//WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
+	data->memDados->flagMonitorComand = 0;
+	Board aux;
+	SetEvent(data->sinc->printBoard);
+	DWORD n, res, playerLost;
+	_tprintf(TEXT("ThreadWaterRunning\n"));
+	for (DWORD i = 0; i < data->numPlayer; ++i) {
+		if (data->hPipe->active) {
+			if (!WriteFile(data->hPipe[i].hInstance, data->pipeDataInitial, sizeof(Pipe), &n, NULL)) {
+				_tprintf(TEXT("[ERRO] Escrever no pipe! (WriteFile)\n"));
+				exit(-1);
+			}
+		}
+	}
+	_tprintf(TEXT("ThreadWaterRunning - Enviei pela primeira vez as boards para os clientes \n"));
+	while (&data->continua) {
+		_ftprintf(stderr, TEXT("-----------> Water Running in %d seconds\n"), data->timeR);
+		Sleep(data->timeR * 1000);
+
+		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
+
+		Sleep(3000);
+
+		if (data->memDados->flagMonitorComand) { //Monitor Comand
+			_ftprintf(stderr, TEXT("-----------> Water Stoped for %d seconds\n"), data->memDados->timeMonitorComand);
+			Sleep(data->memDados->timeMonitorComand * 1000);
+			data->memDados->flagMonitorComand = 0;
+		}
+		
+		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
+		CopyMemory(&aux, data->memDados->VBoard, sizeof(Board));
+		ReleaseMutex(data->memDados->mutexBoard);
+
+		for (DWORD i = 0; i < data->numPlayer; ++i) {
+			if (data->hPipe->active) {             //vamos inserir água nos jogadores que existem
+				res = insertWater(&aux.player[i].board); 
+				if (res == -1) {
+					playerLost = i;
+				}
+			}
+		}
+
+		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
+		CopyMemory(data->memDados->VBoard, &aux, sizeof(Board));
+		ReleaseMutex(data->memDados->mutexBoard);
+
+
+		SetEvent(data->sinc->printBoard);
+		ResetEvent(data->sinc->printBoard);
+
+
+		if (!WriteFile(data->playerServ[1], data->pipeDataInitial, sizeof(Pipe), &n, NULL)) {
+			_tprintf(TEXT("[ERRO] Escrever no pipe! (WriteFile)\n"));
+			exit(-1);
+		}
+		for (DWORD i = 0; i < data->numPlayer; ++i) {
+			if (data->hPipe->active) {
+				if (!WriteFile(data->playerServ[i]->hPipe.hInstance, data->playerServ[i]->pipeData, sizeof(Pipe), &n, NULL)) {
+					_tprintf(TEXT("[ERRO] Escrever no pipe! (WriteFile)\n"));
+					exit(-1);
+				}
+			}
+		}
+
+		if (res == 1) {
+			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
+			//data->memDados->VBoard->win = 1;
+			ReleaseMutex(data->memDados->mutexBoard);
+			_ftprintf(stderr, TEXT("\n\nYou Won\n"));
+			*data->continua = 0;
+			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
+			return 1;
+		}
+		else if (res == -1) {
+			_ftprintf(stderr, TEXT("\n\nYou Lost\n"));
+			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
+			//data->memDados->VBoard->win = -1;
+			ReleaseMutex(data->memDados->mutexBoard);
+			*data->continua = 0;
+			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
+			return 1;
+		}
+	}
+}
+
+DWORD WINAPI ThreadInsertPipe(LPVOID param) { //uma thread destas para cada Player
+	PTHREADTEC data = (PTHREADTEC)param;
+	while (&data->continua) {
+		
+	}
+}
+
 
 DWORD WINAPI ThreadConectClient(LPVOID param) {
 	THREADPIPE* data = (THREADPIPE*)param;
 	TCHAR comand[SIZE];
 	DWORD n,i, nBytes,ret;
-	Pipe pipeData;
 	while (1) {
 		_tprintf(_T("[Servidor] Waiting for Player...\n"));
 		DWORD result = WaitForMultipleObjects(MAX_PLAYERS, data->hEvents, FALSE, INFINITE);
@@ -243,9 +383,9 @@ DWORD WINAPI ThreadConectClient(LPVOID param) {
 				ReleaseMutex(data->hMutex);
 			}
 			data->numPlayer++;
-			data->pipeData->nPlayer = data->numPlayer;
+			data->pipeDataInitial->nPlayer = data->numPlayer;
 		}
-		WriteFile(data->hPipe[i].hInstance, data->pipeData, sizeof(Pipe), &n, NULL);
+		WriteFile(data->hPipe[i].hInstance, data->pipeDataInitial, sizeof(Pipe), &n, NULL);
 
 		if (data->numPlayer == 2)
 			break;
@@ -253,23 +393,14 @@ DWORD WINAPI ThreadConectClient(LPVOID param) {
 		//WaitForSingleObject(data->pipeData->read, INFINITE);
 
 
-		ret = ReadFile(data->hPipe[i].hInstance, data->pipeData, sizeof(Pipe), &n, NULL);
-		if (data->pipeData->solo == 1) 
+		ret = ReadFile(data->hPipe[i].hInstance, data->pipeDataInitial, sizeof(Pipe), &n, NULL);
+		if (data->pipeDataInitial->solo == 1)
 			break; //we don't need to wait for another player
 		
 	}
 	_ftprintf(stderr, TEXT("ThreadNamedPipes ended\n"));
 }
 
-DWORD WINAPI ThreadNamedPipes(LPVOID param) {
-	THREADTEC* data = (THREADTEC*)param;
-	TCHAR comand[SIZE];
-	DWORD aux;
-
-
-	_ftprintf(stderr, TEXT("ThreadNamedPipes ended\n"));
-
-}
 DWORD WINAPI Threadkeyboard(LPVOID param) {
 	THREADTEC* data = (THREADTEC*)param;
 	TCHAR comand[SIZE];
@@ -307,61 +438,7 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 
 }
 
-DWORD WINAPI ThreadWaterRunning(LPVOID param) { //thread responsible for startign the water running
-	PTHREADTEC data = (PTHREADTEC)param;
-	
-	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
-	_ftprintf(stderr, TEXT("-----------> Starting in %d seconds\n"), data->registoDados.actualTime);
-	Sleep(data->registoDados.actualTime * 1000);
-	data->memDados.flagMonitorComand = 0;
-	Board aux;
-	SetEvent(data->sinc->printBoard);
-	while (&data->continua) {
-		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
 
-		Sleep(3000);
-
-		if (data->memDados.flagMonitorComand) { //Monitor Comand
-			_ftprintf(stderr, TEXT("-----------> Water Stoped for %d seconds\n"), data->memDados.timeMonitorComand);
-			Sleep(data->memDados.timeMonitorComand * 1000);
-			data->memDados.flagMonitorComand = 0;
-		
-		}
-
-		WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
-		CopyMemory(&aux, data->memDados.VBoard, sizeof(Board));
-		ReleaseMutex(data->memDados.mutexBoard);
-
-		DWORD res= insertWater(&aux);
-		
-		WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
-		CopyMemory(data->memDados.VBoard, &aux, sizeof(Board));
-		ReleaseMutex(data->memDados.mutexBoard);
-
-
-		SetEvent(data->sinc->printBoard); 
-		ResetEvent(data->sinc->printBoard);
-
-		if (res == 1) {
-			WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
-			data->memDados.VBoard->win = 1;
-			ReleaseMutex(data->memDados.mutexBoard);
-			_ftprintf(stderr, TEXT("\n\nYou Won\n"));
-			*data->continua = 0;
-			ReleaseSemaphore(data->memDados.semServer, 1, NULL);
-			return 1;
-		}
-		else if (res == -1) {
-			_ftprintf(stderr, TEXT("\n\nYou Lost\n"));
-			WaitForSingleObject(data->memDados.mutexBoard, INFINITE);
-			data->memDados.VBoard->win = -1;
-			ReleaseMutex(data->memDados.mutexBoard);
-			*data->continua = 0;
-			ReleaseSemaphore(data->memDados.semServer, 1, NULL);
-			return 1;
-		}
-	}
-}
 
 DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler do buffer circular os comandos do monitor
 	THREADCONS* data = (THREADCONS*)param;
@@ -392,7 +469,7 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 
 		case 2:
 			
-			if (!putWall(data->memDados, aux.wallX, aux.wallY)) {
+			if (!putWall(data->memDados, aux.wallX, aux.wallY, 2)) { ////mudar isto
 				_ftprintf(stderr, TEXT("Error placing wall\n"));
 			}else
 				SetEvent(data->sinc->printBoard);
