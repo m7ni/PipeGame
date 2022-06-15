@@ -3,7 +3,10 @@
 #define SERVIDOR_H
 
 #include <tchar.h>
-
+typedef struct {
+	char desiredPiece;
+	unsigned int x,y;
+}PLAY;
 
 typedef struct {
 	char board[20][20];
@@ -17,7 +20,7 @@ typedef struct {
 	unsigned int nextWaterXY[2];
 	char lastInsert;
 
-	char desiredPiece;
+	PLAY desiredPiece;
 	unsigned int win;
 	unsigned int lose;
 }PLAYER;

@@ -3,42 +3,22 @@
 #include "../Memory.h";
 #define PIPE_NAME TEXT("\\\\.\\pipe\\teste")
 
-/* ===================================================== */
-/* Programa base (esqueleto) para aplicações Windows     */
-/* ===================================================== */
-// Cria uma janela de nome "Janela Principal" e pinta fundo de branco
-// Modelo para programas Windows:
-//  Composto por 2 funções: 
-//	WinMain()     = Ponto de entrada dos programas windows
-//			1) Define, cria e mostra a janela
-//			2) Loop de recepção de mensagens provenientes do Windows
-//     TrataEventos()= Processamentos da janela (pode ter outro nome)
-//			1) É chamada pelo Windows (callback) 
-//			2) Executa código em função da mensagem recebida
+#define HORIZONTAL_PIPE TEXT("pipes/2.bmp")
+#define VERTICAL_PIPE TEXT("pipes/1.bmp")
+#define START_PIPE TEXT("pipes/start.bmp")
+#define BLANK TEXT("blank.bmp")
+#define END_PIPE TEXT("pipes/end.bmp")
+#define LEFT90 TEXT("pipes/4.bmp")
+#define RIGHT90 TEXT("pipes/3.bmp")
+#define RIGHT90_1 TEXT("6.bmp")
+#define LEFT90_1 TEXT("pipes/5.bmp")
+#define WATER TEXT("pipes/water.bmp")
+#define BARRIER TEXT("pipes/barrier.bmp")
 
 LRESULT CALLBACK TrataEventos(HWND, UINT, WPARAM, LPARAM);
 
-// Nome da classe da janela (para programas de uma só janela, normalmente este nome é 
-// igual ao do próprio programa) "szprogName" é usado mais abaixo na definição das 
-// propriedades do objecto janela
-
-
 TCHAR szProgName[] = TEXT("Base");
 
-// ============================================================================
-// FUNÇÃO DE INÍCIO DO PROGRAMA: WinMain()
-// ============================================================================
-// Em Windows, o programa começa sempre a sua execução na função WinMain()que desempenha
-// o papel da função main() do C em modo consola WINAPI indica o "tipo da função" (WINAPI
-// para todas as declaradas nos headers do Windows e CALLBACK para as funções de
-// processamento da janela)
-// Parâmetros:
-//   hInst: Gerado pelo Windows, é o handle (número) da instância deste programa 
-//   hPrevInst: Gerado pelo Windows, é sempre NULL para o NT (era usado no Windows 3.1)
-//   lpCmdLine: Gerado pelo Windows, é um ponteiro para uma string terminada por 0
-//              destinada a conter parâmetros para o programa 
-//   nCmdShow:  Parâmetro que especifica o modo de exibição da janela (usado em  
-//        	   ShowWindow()
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow) {
 	HWND hWnd;		// hWnd é o handler da janela, gerado mais abaixo por CreateWindow()
@@ -96,12 +76,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		200,		// Posição y pixels (default=abaixo da última)
 		800,		// Largura da janela (em pixels)
 		500,		// Altura da janela (em pixels)
-		(HWND)HWND_DESKTOP,	// handle da janela pai (se se criar uma a partir de
-						// outra) ou HWND_DESKTOP se a janela for a primeira, 
-						// criada a partir do "desktop"
+		(HWND)HWND_DESKTOP,	// handle da janela pai (se se criar uma a partir de			
 		(HMENU)NULL,			// handle do menu da janela (se tiver menu)
-		(HINSTANCE)hInst,		// handle da instância do programa actual ("hInst" é 
-						// passado num dos parâmetros de WinMain()
+		(HINSTANCE)hInst,		// handle da instância do programa actual ("hInst" é 	
 		0);				// Não há parâmetros adicionais para a janela
 	  // ============================================================================
 	  // 4. Mostrar a janela
@@ -137,13 +114,25 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
 		ReadFile(hPipe, &dados, sizeof(Pipe), &n, NULL);
 
-	 
+		loadImages(&dados.imagensP.horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPE);
+		loadImages(&dados.imagensP.start, hWnd, (TCHAR*)START_PIPE);
+		loadImages(&dados.imagensP.end, hWnd, (TCHAR*)END_PIPE);
+		loadImages(&dados.imagensP.vertical, hWnd, (TCHAR*)VERTICAL_PIPE);
+		loadImages(&dados.imagensP.Right90, hWnd, (TCHAR*)RIGHT90);
+		loadImages(&dados.imagensP.Left90, hWnd, (TCHAR*)LEFT90);
+		loadImages(&dados.imagensP.Left_1_90, hWnd, (TCHAR*)LEFT90_1);
+		loadImages(&dados.imagensP.Right_1_90, hWnd, (TCHAR*)RIGHT90_1);
+		loadImages(&dados.imagensP.blank, hWnd, (TCHAR*)BLANK);
+		loadImages(&dados.imagensP.water, hWnd, (TCHAR*)WATER);
+		loadImages(&dados.imagensP.barrier, hWnd, (TCHAR*)BARRIER);
 
 
 	dados.hPipe = hPipe;
 	dados.mutexCliente = CreateMutex(NULL, FALSE, NULL);
 	dados.hWnd = hWnd;
 	dados.memDC = &memDC;
+	CreateThread(NULL, 0, printTabuleiro, &dados, 0, NULL);
+
 	SetWindowLongPtr(hWnd, 0, (LONG_PTR)&dados);
 	ShowWindow(hWnd, nCmdShow);	// "hWnd"= handler da janela, devolvido por 
 					  // "CreateWindow"; "nCmdShow"= modo de exibição (p.e. 
@@ -166,23 +155,24 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
 DWORD WINAPI printTabuleiro(LPVOID lparam){
 {
-		PAINTSTRUCT ps;
+	PAINTSTRUCT ps;
 	Pipe* dados = (Pipe*)lparam;
 	RECT rect;
 	int sentido = 1;
 	DWORD ret,n;
+	
 	while (1)
 	{
-			
 		WaitForSingleObject(dados->mutexCliente, INFINITE);
 		ret = ReadFile(dados->hPipe, &dados, sizeof(Pipe), &n, NULL);
 
 			if (dados->memDC != NULL)
 			{
-				GetClientRect(dados->hWnd, &rect);
+				/*GetClientRect(dados->hWnd, &rect);
 				FillRect(dados->memDC, &rect, CreateSolidBrush(RGB(255, 0, 0)));
 				BitBlt(dados->memDC, dados->xBitmap, dados->yBitmap,
 					dados->bmp.bmWidth, dados->bmp.bmHeight, dados->bmpDC, 0, 0, SRCCOPY);
+					*/
 			}
 			
 	}
@@ -192,6 +182,8 @@ DWORD WINAPI printTabuleiro(LPVOID lparam){
 		InvalidateRect(dados->hWnd, NULL, TRUE);
 		Sleep(30);
 	}
+	
+		
 }
 LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam) {
 	Pipe * dados = (Pipe *) GetWindowLongPtr(hWnd, 0);
@@ -208,46 +200,8 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 
 	switch (messg) {
 	case WM_CREATE:
-		quadrado = (HBITMAP)LoadImage(NULL, TEXT("0.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
-		GetObject(quadrado, sizeof(bmp), &bmp);
-
-		hdc = GetDC(hWnd);
-		bmpDC = CreateCompatibleDC(hdc);
-		SelectObject(bmpDC, quadrado);
-		ReleaseDC(hWnd, hdc);
-
 		GetClientRect(hWnd, &rect);
-		xBitmap = (0) - (0);
-		yBitmap = (0) - (0);
-
-
-		one = (HBITMAP)LoadImage(NULL, TEXT("1.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
-		GetObject(one, sizeof(one), &one);
-
-		two = (HBITMAP)LoadImage(NULL, TEXT("2.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
-		GetObject(two, sizeof(two), &two);
-
-		three = (HBITMAP)LoadImage(NULL, TEXT("3.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
-		GetObject(quadrado, sizeof(quadrado), &quadrado);
-
-		four = (HBITMAP)LoadImage(NULL, TEXT("4.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
-		GetObject(four, sizeof(four), &four);
-
-		five = (HBITMAP)LoadImage(NULL, TEXT("5.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
-		GetObject(five, sizeof(five), &five);
-
-		six = (HBITMAP)LoadImage(NULL, TEXT("6.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
-		GetObject(six, sizeof(six), &six);
-
-		begin = (HBITMAP)LoadImage(NULL, TEXT("begin.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
-		GetObject(begin, sizeof(begin), &begin);
-
-		end = (HBITMAP)LoadImage(NULL, TEXT("end.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
-		GetObject(end, sizeof(end), &end);
-
-		agua = (HBITMAP)LoadImage(NULL, TEXT("water.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
-		GetObject(agua, sizeof(agua), &agua);
-		CreateThread(NULL, 0, printTabuleiro, &dados, 0, NULL);
+		
 		break;
 
 	case WM_PAINT:
@@ -268,11 +222,20 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		BitBlt(hdc, 0, 0, rect.right, rect.bottom, dados->memDC, 0, 0, SRCCOPY);
 		EndPaint(hWnd, &ps);
 		break;
-
+	case WM_COMMAND:
+		dados = (Pipe*)GetWindowLongPtr(hWnd, 0);
+		switch (LOWORD(wParam))
+		{
+		case 0:
+			swap_images(dados);
+			InvalidateRect(hWnd, NULL, TRUE);
+			break;
+		}
+		break;
 	case WM_LBUTTONDOWN:
 
 
-		//lançar função que envia o que ele clica
+		//changePipe(Client * client, int y, int x);
 		break;
 	case WM_CLOSE:
 			//fazer os closes
@@ -289,3 +252,86 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		break;  // break tecnicamente desnecessário por causa do return
 	}
 	return(0);}
+
+
+void swap_images(Pipe* dados) {
+
+	for (DWORD x = 0; x < dados->player.actualSize; x++) {
+		for (DWORD y = 0; y < dados->player.actualSize; y++) {
+			if (dados->player.board[x][y] == '.')
+			{
+				dados->tabImages[x][y].image = &dados->imagensP.blank;
+			}
+			else if (dados->player.board[x][y] == 'w')
+			{
+				dados->tabImages[x][y].image = &dados->imagensP.barrier;
+			}
+			else if (dados->player.board[x][y] == 'z') {
+				dados->tabImages[x][y].image = &dados->imagensP.horizontal;
+			}
+			else if (dados->player.board[x][y] == 'x') {
+				dados->tabImages[x][y].image = &dados->imagensP.horizontal;
+			}
+			else if (dados->player.board[x][y] == 's') {
+				dados->tabImages[x][y].image = &dados->imagensP.Right90;
+			}
+			else if (dados->player.board[x][y] == 'r') {
+				dados->tabImages[x][y].image = &dados->imagensP.Left_1_90;
+			}
+			else if (dados->player.board[x][y] == 'd') {
+				dados->tabImages[x][y].image = &dados->imagensP.Left90;
+			}
+			else if (dados->player.board[x][y] == 'l') {
+				dados->tabImages[x][y].image = &dados->imagensP.Right_1_90;
+			}
+			else if (dados->player.board[x][y] == 'a') {
+				dados->tabImages[x][y].image = &dados->imagensP.water;
+			}
+		}
+	}
+}
+
+void changePipe(Pipe* dados, int y, int x) {
+	TCHAR buf[256], value = NULL;
+	DWORD n;
+
+	if (dados->tabImages[x][y].image == &dados->imagensP.blank)
+	{
+		dados->tabImages[x][y].image = &dados->imagensP.horizontal;
+		dados->player.desiredPiece.desiredPiece = 'z';
+	}
+	else if (dados->tabImages[x][y].image == &dados->imagensP.horizontal)
+	{
+		dados->tabImages[x][y].image = &dados->imagensP.vertical;
+		dados->player.desiredPiece.desiredPiece = 'z';
+	}
+	else if (dados->tabImages[x][y].image == &dados->imagensP.vertical) {
+		dados->tabImages[x][y].image = &dados->imagensP.Right90;
+		dados->player.desiredPiece.desiredPiece = 'z';
+	}
+	else if (dados->tabImages[x][y].image == &dados->imagensP.Right90) {
+		dados->tabImages[x][y].image == &dados->imagensP.Left90;
+		dados->player.desiredPiece.desiredPiece = 'z';
+	
+	}
+	else if (dados->tabImages[x][y].image == &dados->imagensP.Left90) {
+		dados->tabImages[x][y].image == &dados->imagensP.Left_1_90;
+		dados->player.desiredPiece.desiredPiece = 'z';
+		
+	}
+	else if (dados->tabImages[x][y].image == &dados->imagensP.Left_1_90) {
+		dados->tabImages[x][y].image == &dados->imagensP.Right_1_90;
+		dados->player.desiredPiece.desiredPiece = 'z';
+		
+	}
+	else if (dados->tabImages[x][y].image == &dados->imagensP.Right_1_90) {
+		dados->tabImages[x][y].image == &dados->imagensP.blank;
+		dados->player.desiredPiece.desiredPiece = 'z';
+	
+	}
+
+
+	BOOL ret;
+	DWORD nBytes;
+	WriteFile(dados->hPipe, &dados, sizeof(Pipe), &n, NULL);
+}

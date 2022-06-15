@@ -10,7 +10,7 @@
 #include "Registry.h"
 #include "Servidor.h"
 #include "WinBase.h"
-
+#include "Cliente/Cliente.h"
 #define BUFFERSIZE 255
 #define MAX 20
 #define TAM 15
@@ -48,14 +48,19 @@ typedef struct {   //comunicar pelo pipe
 	unsigned int solo;
 	PLAYER player;
 	
-	
+	TabImagens tabImages[20][20];
+	Images imagensP;
 	HANDLE read;
 	HANDLE *hPipe;
+	
+	int current_image;
+	TCHAR current_pipe;
 	HDC *memDC;
 	HDC bmpDC;
 	HANDLE mutexCliente;
 	HWND hWnd;
 	BITMAP bmp;
+
 } Pipe;
 
 typedef struct { 
