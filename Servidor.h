@@ -7,16 +7,17 @@
 
 typedef struct {
 	char board[20][20];
-
+	unsigned int actualSize;
 	char pecas[6];		//array that hold the available pieces;
 
 	unsigned int begin[2];
 	unsigned int end[2];
 
 	unsigned int lastWaterXY[2];
-
+	unsigned int nextWaterXY[2];
 	char lastInsert;
 
+	char desiredPiece;
 	unsigned int win;
 	unsigned int lose;
 }PLAYER;

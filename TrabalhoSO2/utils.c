@@ -429,15 +429,86 @@ DWORD putWall(MemDados* aux, DWORD posX, DWORD posY,DWORD p) {
 	WaitForSingleObject(aux->mutexBoard, INFINITE);
 
 	for (DWORD l = 0; l < p; l++) {
-	if (posX > aux->VBoard->actualSize || posY > aux->VBoard->actualSize || posX < 0 || posY < 0 || aux->VBoard->player[p].board[posX][posY] != '.') {
-		ReleaseMutex(aux->mutexBoard);
-		_ftprintf(stderr, TEXT("-----------> Cant place wall here: [%d][%d]\n"), posX, posX);
-		return -1;
-	}else {
-		aux->VBoard->player[p].board[posX][posY] = 'W';
-		_ftprintf(stderr, TEXT("-----------> Placed wall at [%d][%d]\n"), posX, posX);
-	}
+		if (posX > aux->VBoard->actualSize || posY > aux->VBoard->actualSize || posX < 0 || posY < 0 || aux->VBoard->player[p].board[posX][posY] != '.') {
+			ReleaseMutex(aux->mutexBoard);
+			_ftprintf(stderr, TEXT("-----------> Cant place wall here: [%d][%d]\n"), posX, posX);
+			return -1;
+		}else {
+			aux->VBoard->player[p].board[posX][posY] = 'W';
+			_ftprintf(stderr, TEXT("-----------> Placed wall at [%d][%d]\n"), posX, posX);
+		}
 	}
 	ReleaseMutex(aux->mutexBoard);
 	return 1;
 }
+
+DWORD putPipe(PLAYER* board, TCHAR p) {
+	
+	return 1;
+}
+
+//DWORD insertWater2(Board* board, DWORD p) {
+//	//zd,zl,xr,xl,sz,sd,sl,rz,rd,rl,dx,dr,dl,lx,ls,ld
+//	TCHAR teste;
+//
+//	switch (board->player[p].lastInsert) {
+//	case 'z':
+//		teste = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] +1];
+//		if (teste != 'd' || teste != 'l') {
+//			return -1;
+//		}
+//		board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] = toupper(teste); //atualizar a matriz
+//		board->player[p].lastWaterXY[1] = board->player[p].lastWaterXY[1] + 1; //atualizar a posição da ultima água
+//		board->player[p].lastInsert = teste; //guardar o ultimo tubo comido
+//
+//		if (teste == 'd') {
+//			board->player[p].nextWaterXY[0] = board->player[p].lastWaterXY[0] + 1;
+//			board->player[p].nextWaterXY[1] = board->player[p].lastWaterXY[1];
+//		}
+//		if (teste == 'l') {
+//			board->player[p].nextWaterXY[0] = board->player[p].lastWaterXY[0] - 1;
+//			board->player[p].nextWaterXY[1] = board->player[p].lastWaterXY[1];
+//		}
+//	
+//		break;
+//	case 'x':
+//		if(board->player[p].nextWaterXY[0])
+//		teste = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
+//		if (teste != 'r' || teste != 'l') {
+//			return 1;
+//		}
+//		break;
+//
+//	case 's':
+//		teste = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] ];
+//		if (teste != 'z' || teste != 'd' || teste != 'l') {
+//			return 1;
+//		}
+//		break;
+//
+//	case 'r':
+//		teste = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
+//		if (teste != 'z' || teste != 'd' || teste != 'l') {
+//			return 1;
+//		}
+//		break;
+//	case 'd':
+//		teste = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] ];
+//		if (teste != 'x' || teste != 'r' || teste != 'l') {
+//			return 1;
+//		}
+//		break;
+//	case 'l':
+//		teste = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] ];
+//		if (teste != 'x' || teste != 's' || teste != 'd') {
+//			return 1;
+//		}
+//		break;
+//
+//	}
+//
+//	
+//	
+//	return 1;
+//}
+

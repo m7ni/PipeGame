@@ -46,8 +46,16 @@ typedef struct {
 typedef struct {   //comunicar pelo pipe
 	unsigned int nPlayer;
 	unsigned int solo;
-	Board board;
+	PLAYER player;
+	
+	
 	HANDLE read;
+	HANDLE *hPipe;
+	HDC *memDC;
+	HDC bmpDC;
+	HANDLE mutexCliente;
+	HWND hWnd;
+	BITMAP bmp;
 } Pipe;
 
 typedef struct { 
@@ -66,7 +74,6 @@ typedef struct {
 	HANDLE mutexBoard; //Mutex to control the access to the board shared memory
 	LPHANDLE FileMapBoard;			// File Map para a struct Board
 	Board* VBoard;			// Vista para a struct Board
-
 
 	unsigned int flagMonitorComand;
 	unsigned int timeMonitorComand;

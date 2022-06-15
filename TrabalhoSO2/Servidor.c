@@ -31,11 +31,12 @@ typedef struct {
 	MemDados* memDados;			//access to data for the sharedMemory
 	Sinc* sinc;
 
+	DWORD id;
 	HANDLE mutexP;
 	HANDLE eventPipe;
 	PIPEDATA hPipe;          //Handlers especificos para o pipe desse player
 	Pipe* pipeData;			//Estrutura que é enviada atraves do pipe
-}THREADGAME;
+}THREADGAME, *PTHREADGAME;
 
 typedef struct {
 	DWORD numPlayer;
@@ -208,16 +209,16 @@ int _tmain(int argc, TCHAR* argv[]) {
 		TP.hEvents[i] = hEventTemp;
 		TP.hPipe[i].active = FALSE;
 
-		TP.player[0] = &TG1;
-		TP.player[1] = &TG2;
-
 		if (ConnectNamedPipe(hPipe, &TP.hPipe[i].overlap)) {
 			_tprintf(_T("[ERROR] Server Conection! (ConnectNamedPipe)\n"));
 			exit(-1);
 		}
 		//esperar que os jogadores cheguem
 	}
-
+	TG1.pipeData = &pipeData1;
+	TG2.pipeData = &pipeData2;
+	TP.playerServ[0] = &TG1;
+	TP.playerServ[1] = &TG2;
 	//abrir thread para esperar que os jogadores entrem
 	if ((threadC = CreateThread(NULL, 0, ThreadConectClient, &TP, 0, NULL)) == NULL)
 	{
@@ -231,15 +232,18 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	setupBoard(&KB.memDados, KB.registoDados.actualSize, TP.pipeDataInitial->solo); //dependendo de ser solo ou comp, vai criar um ou dois tabuleiros
 
-	//Thread responsible for the Water
-	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &TP, 0, NULL)) == NULL)
-	{
-		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Water\n"));
-		return -1;
-	}
 
-	TG1.hPipe = TP.hPipe[1];
-	TG1.eventPipe = TP.hEvents[1];
+
+
+
+	Board aux;
+	WaitForSingleObject(KB.memDados.mutexBoard, INFINITE);
+	CopyMemory(&aux, KB.memDados.VBoard, sizeof(Board));
+	ReleaseMutex(KB.memDados.mutexBoard);
+	TG1.id = 0;
+	TG1.pipeData->player = aux.player[0];
+	TG1.hPipe = TP.hPipe[0];
+	TG1.eventPipe = TP.hEvents[0];
 	TG1.mutexP = TP.hMutex;
 	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadInsertPipe, &TG1, 0, NULL)) == NULL)
 	{
@@ -248,9 +252,11 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 
 	if (TP.pipeDataInitial->nPlayer == 2) {
-		TG2.hPipe = TP.hPipe[2];
-		TG2.eventPipe = TP.hEvents[2];
+		TG2.hPipe = TP.hPipe[1];
+		TG2.eventPipe = TP.hEvents[1];
 		TG2.mutexP = TP.hMutex;
+		TG2.pipeData->player = aux.player[1];
+		TG1.id = 1;
 		if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadInsertPipe, &TG2, 0, NULL)) == NULL)
 		{
 			_ftprintf(stderr, TEXT("Error creating Thread responsible for thePipes\n"));
@@ -258,6 +264,12 @@ int _tmain(int argc, TCHAR* argv[]) {
 		}
 	}
 	
+	//Thread responsible for the Water
+	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &TP, 0, NULL)) == NULL)
+	{
+		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Water\n"));
+		return -1;
+	}
 
 
 
@@ -280,7 +292,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 	_tprintf(TEXT("ThreadWaterRunning\n"));
 	for (DWORD i = 0; i < data->numPlayer; ++i) {
 		if (data->hPipe->active) {
-			if (!WriteFile(data->hPipe[i].hInstance, data->pipeDataInitial, sizeof(Pipe), &n, NULL)) {
+			if (!WriteFile(data->hPipe[i].hInstance, data->playerServ[i]->pipeData, sizeof(Pipe), &n, NULL)) {
 				_tprintf(TEXT("[ERRO] Escrever no pipe! (WriteFile)\n"));
 				exit(-1);
 			}
@@ -323,10 +335,6 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 		ResetEvent(data->sinc->printBoard);
 
 
-		if (!WriteFile(data->playerServ[1], data->pipeDataInitial, sizeof(Pipe), &n, NULL)) {
-			_tprintf(TEXT("[ERRO] Escrever no pipe! (WriteFile)\n"));
-			exit(-1);
-		}
 		for (DWORD i = 0; i < data->numPlayer; ++i) {
 			if (data->hPipe->active) {
 				if (!WriteFile(data->playerServ[i]->hPipe.hInstance, data->playerServ[i]->pipeData, sizeof(Pipe), &n, NULL)) {
@@ -358,9 +366,25 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 }
 
 DWORD WINAPI ThreadInsertPipe(LPVOID param) { //uma thread destas para cada Player
-	PTHREADTEC data = (PTHREADTEC)param;
+	PTHREADGAME data = (PTHREADGAME)param;
+	DWORD n;
+	Board aux;
 	while (&data->continua) {
+		if (!ReadFile(data->hPipe.hInstance, data->pipeData, sizeof(Pipe), &n, NULL)) {
+			_tprintf(TEXT("[ERRO] LER no pipe! (WriteFile)\n"));
+			exit(-1);
+		}
+
+		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
+		CopyMemory(&aux, data->memDados->VBoard, sizeof(Board));
+		ReleaseMutex(data->memDados->mutexBoard);
+
 		
+		putPipe(&aux.player[data->id], data->pipeData->player.desiredPiece);
+
+		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
+		CopyMemory(data->memDados->VBoard, &aux, sizeof(Board));
+		ReleaseMutex(data->memDados->mutexBoard);
 	}
 }
 

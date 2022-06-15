@@ -19,7 +19,7 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 	THREADTEC* data = (THREADTEC*)param;
 	TCHAR comand[SIZE];
 	Comand aux;
-	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE);
+	//WaitForSingleObject(data->sinc->timerStartEvent, INFINITE);
 	Sleep(1000);
 	aux.code = 0;
 	
