@@ -15,8 +15,11 @@ void setupBoard(MemDados* aux, DWORD actualSize) {
 		}
 	}
 
-	DWORD lineBegin = rand() % aux->VBoard->actualSize;
-	DWORD lineEnd = rand() % aux->VBoard->actualSize;
+	DWORD lineBegin1 = rand() % aux->VBoard->actualSize;
+	DWORD lineEnd1 = rand() % aux->VBoard->actualSize;
+
+	DWORD lineBegin = (rand() %((aux->VBoard->actualSize - 2) - 1 + 1)) + 1;
+	DWORD lineEnd = (rand() % ((aux->VBoard->actualSize - 2)- 1 + 1)) + 1;
 	
 	DWORD startingSide = rand() % 4; // respetivo canto 0=←, 2=↑, 1=→, 3=↓
 	
@@ -214,7 +217,7 @@ DWORD insertWater(Board* board) {
 							return -1;
 						}
 						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'e') {
-							board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = 'E';
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = 'a';
 							return 1;
 						}
 					}
@@ -339,7 +342,7 @@ DWORD insertWater(Board* board) {
 							return -1;
 						}
 						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'e') {
-							board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'E';
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'a';
 							return 1;
 						}
 					}
@@ -407,7 +410,7 @@ DWORD insertWater(Board* board) {
 						return 0;
 					}
 					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'e') {
-						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'E';
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'a';
 						return 1;
 					}
 				}
@@ -435,7 +438,7 @@ DWORD insertWater(Board* board) {
 						return -1;
 					}
 					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'e') {
-						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = 'E';
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = 'a';
 						return 1;
 					}
 				}
@@ -547,7 +550,7 @@ DWORD insertWater(Board* board) {
 						return -1;
 					}
 					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
-						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E';
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'a';
 						return 1;
 					}
 				}
@@ -575,7 +578,7 @@ DWORD insertWater(Board* board) {
 						return -1;
 					}
 					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'e') {
-						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'E';
+						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'a';
 						return 1;
 					}
 				}
@@ -696,7 +699,7 @@ DWORD insertWater(Board* board) {
 						return -1;
 					}
 					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
-						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] = 'E';
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] = 'a';
 						return 1;
 					}
 
@@ -741,7 +744,7 @@ DWORD insertWater(Board* board) {
 						return -1;
 					}
 					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
-						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E';
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'a';
 						return 1;
 					}
 				}
@@ -769,7 +772,7 @@ DWORD insertWater(Board* board) {
 						return -1;
 					}
 					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'e') {
-						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'E';
+						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'a';
 						return 1;
 					}
 				
@@ -839,7 +842,7 @@ DWORD insertWater(Board* board) {
 
 					}
 					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'e') {
-						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'E';
+						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'a';
 						return 1;
 
 					}
@@ -904,7 +907,7 @@ DWORD insertWater(Board* board) {
 
 					}
 					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
-						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E';
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'a';
 						return 1;
 
 					}
@@ -1300,7 +1303,7 @@ DWORD insertWater(Board* board) {
 						return 0;
 					}
 					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'e') {
-						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'E';
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'a';
 						return 1;
 					}
 				}
@@ -1336,7 +1339,7 @@ DWORD insertWater(Board* board) {
 						return 0;
 					}
 					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
-						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E';
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'a';
 						return 1;
 					}
 				}
@@ -1406,7 +1409,7 @@ DWORD insertWater(Board* board) {
 						return 0;
 					}
 					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'e') {
-						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = 'E';
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = 'a';
 						return 1;
 					}
 
