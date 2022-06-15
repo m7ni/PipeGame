@@ -2,11 +2,12 @@
 
 void setupBoard(MemDados* aux, DWORD actualSize) {
 	srand(time(NULL));
-	DWORD goUp;
 
 	WaitForSingleObject(aux->mutexBoard, INFINITE);
+
 	aux->VBoard->actualSize = actualSize;
 	aux->VBoard->win = 0;
+
 	for (DWORD i = 0; i < aux->VBoard->actualSize; i++) {
 		for (DWORD j = 0; j < aux->VBoard->actualSize; j++)
 		{
@@ -16,98 +17,46 @@ void setupBoard(MemDados* aux, DWORD actualSize) {
 
 	DWORD lineBegin = rand() % aux->VBoard->actualSize;
 	DWORD lineEnd = rand() % aux->VBoard->actualSize;
-	//DWORD lineBegin = 3;
-	//DWORD lineEnd = 4;
-
-	DWORD VoH = rand() % 2;
-	//DWORD VoH = 1;
-	//_tprintf(TEXT("RAND> %d"), VoH);
-
-	//DWORD lineBegin = 1;
-	//DWORD lineEnd = 15;
-
-
-	if (lineEnd > lineBegin) //temos que ir para baixo quando chegar ao lado direito da tabela
+	
+	DWORD startingSide = rand() % 4; // respetivo canto 0=←, 2=↑, 1=→, 3=↓
+	
+	switch (startingSide)
 	{
-		goUp = -1;
-	}
-	else if (lineEnd < lineBegin) {
-		goUp = 1;
-	} //temos que ir para cim quando chegar ao lado direito da tabela
-	else {
-		goUp = 0;
-	}
-
-	if (VoH == 0) { //caminho na horizontal 
+	case 0: //canto esquerdo 
+		aux->VBoard->board[lineBegin][0] = '-';
+		aux->VBoard->board[lineEnd][aux->VBoard->actualSize] = 'e';
+		aux->VBoard->sentido = '→';
 		aux->VBoard->begin[0] = lineBegin;
 		aux->VBoard->begin[1] = 0;
-		aux->VBoard->lastInsert = 'B';
+		break;
+	case 1: //canto direito
+		aux->VBoard->board[lineBegin][aux->VBoard->actualSize] = '-';
+		aux->VBoard->board[lineEnd][0] = 'e';
+		aux->VBoard->sentido = '←';
+		aux->VBoard->begin[0] = lineBegin;
+		aux->VBoard->begin[1] = aux->VBoard->actualSize;
+		break;
 
-
-		aux->VBoard->board[lineBegin][0] = 'B'; //begin position
-		aux->VBoard->board[lineEnd][aux->VBoard->actualSize - 1] = 'E'; //end position
-
-
-		for (DWORD j = 1; j < aux->VBoard->actualSize - 1; j++) {
-			aux->VBoard->board[lineBegin][j] = '-';
-		}
-
-		switch (goUp) {
-		case 1:
-			aux->VBoard->board[lineBegin][aux->VBoard->actualSize - 1] = 'S';
-
-			for (DWORD i = lineBegin - 1; i > lineEnd; i--) {
-				aux->VBoard->board[i][aux->VBoard->actualSize - 1] = '|';
-			}
-			break;
-		case -1:
-			aux->VBoard->board[lineBegin][aux->VBoard->actualSize - 1] = 'D';
-
-			for (DWORD i = lineBegin + 1; i < lineEnd; i++) {
-				aux->VBoard->board[i][aux->VBoard->actualSize - 1] = '|';
-			}
-			break;
-
-		default:
-			break;
-		}
-
-	}
-	else { //caminho na vertical
-
+	case 2: //canto superior
+		aux->VBoard->board[0][lineBegin] = '|';
+		aux->VBoard->board[aux->VBoard->actualSize][lineEnd] = 'e';
+		aux->VBoard->sentido = '↓';
 		aux->VBoard->begin[0] = 0;
 		aux->VBoard->begin[1] = lineBegin;
-		aux->VBoard->lastInsert = 'B';
-
-
-		aux->VBoard->board[0][lineBegin] = 'B'; //begin position
-		aux->VBoard->board[aux->VBoard->actualSize - 1][lineEnd] = 'E'; //end position
-
-		for (DWORD j = 1; j < aux->VBoard->actualSize - 1; j++) {
-			aux->VBoard->board[j][lineBegin] = '|';
-		}
-
-		switch (goUp) {
-		case 1:
-			aux->VBoard->board[aux->VBoard->actualSize - 1][lineBegin] = 'L';
-
-			for (DWORD i = lineBegin - 1; i > lineEnd; i--) {
-				aux->VBoard->board[aux->VBoard->actualSize - 1][i] = '-';
-			}
-			break;
-		case -1:
-			aux->VBoard->board[aux->VBoard->actualSize - 1][lineBegin] = 'R';
-
-			for (DWORD i = lineBegin + 1; i < lineEnd; i++) {
-				aux->VBoard->board[aux->VBoard->actualSize - 1][i] = '-';
-			}
-			break;
-
-		default:
-			break;
-		}
-
+		break;
+	
+	case 3: //canto inferior
+		aux->VBoard->board[aux->VBoard->actualSize][lineBegin] = '|';
+		aux->VBoard->board[0][lineEnd] = 'e';
+		aux->VBoard->sentido = '↑';
+		aux->VBoard->begin[0] = aux->VBoard->actualSize;
+		aux->VBoard->begin[1] = lineBegin;
+		break;
+	default:
+		break;
 	}
+	aux->VBoard->lastInsert = 'B';
+	
 
 	ReleaseMutex(aux->mutexBoard);
 
@@ -127,278 +76,1599 @@ void setupBoard(MemDados* aux, DWORD actualSize) {
 DWORD insertWater(Board* board) {
 	if (board->lastInsert == 'B') {
 
+		if (board->sentido == '←') {
+			if (board->board[board->begin[0]][board->begin[1] - 1] == 'z') {
+				board->sentido = '←';
+				board->lastInsert = 'z';
+			}
+			else if (board->board[board->begin[0]][board->begin[1] - 1] == 's'){
+				board->sentido = '↓';
+				board->lastInsert = 'z';
+			}
+			else if (board->board[board->begin[0]][board->begin[1] - 1] == 'r') {
+				board->sentido = '↑';
+				board->lastInsert = 'z';
+			}
+
+			
+		}
+		else if (board->sentido == '→') {
+			if (board->board[board->begin[0]][board->begin[1] + 1] == 'z') {
+				board->sentido = '→';
+				board->lastInsert = 'z';
+			}
+			else if (board->board[board->begin[0]][board->begin[1] + 1] == 'd') {
+				board->sentido = '↓';
+				board->lastInsert = 'z';
+			}
+			else if (board->board[board->begin[0]][board->begin[1] + 1] == 'l') {
+				board->sentido = '↑';
+				board->lastInsert = 'z';
+			}
+
+			
+		}
+		else if (board->sentido == '↑') {
+			if (board->board[board->begin[0] - 1][board->begin[1]] == 'x') {
+				board->sentido = '↑';
+				board->lastInsert = 'x';
+			}
+			else if (board->board[board->begin[0] - 1][board->begin[1]] == 'd') {
+				board->sentido = '↓';
+				board->lastInsert = 'x';
+			}
+			else if (board->board[board->begin[0] - 1][board->begin[1]] == 's') {
+				board->sentido = '↑';
+				board->lastInsert = 'x';
+			}
+
+			
+		}
+		else if (board->sentido == '↓') {
+			if (board->board[board->begin[0] + 1][board->begin[1]] == 'x') {
+				board->sentido = '↓';
+				board->lastInsert = 'x';
+			}
+			else if (board->board[board->begin[0] + 1][board->begin[1]] == 'r') {
+				board->sentido = '↓';
+				board->lastInsert = 'x';
+			}
+			else if (board->board[board->begin[0] + 1][board->begin[1]] == 'l') {
+				board->sentido = '↑';
+				board->lastInsert = 'x';
+			}
+
+			
+		}
+	
 		board->lastWaterXY[0] = board->begin[0];
 		board->lastWaterXY[1] = board->begin[1];
 
-		if (board->board[board->begin[0]][board->begin[1] + 1] == '-')
-			board->lastInsert = '-';
-		else
-			board->lastInsert = '|';
+		if (board->lastInsert == 'x') {
+			board->board[board->begin[0]][board->begin[1]] = 'X';
+			return 0;
+		}else if (board->lastInsert == 'z')
+		{
+			board->board[board->begin[0]][board->begin[1]] = 'Z';
+			return 0;
+		}
 
-		board->board[board->begin[0]][board->begin[1]] = '*';
-
-		return 0;
+		return -1;
 
 	}
 	else {
 
-		//_tprintf(TEXT("\nUltimo tubo: (%c) [%d][%d] \n"), board->lastInsert, board->lastWaterXY[0] + 1, board->lastWaterXY[1] + 1);
+		if (board->lastWaterXY[0] == 0 && board->lastWaterXY[1] < board->actualSize - 1 && board->lastWaterXY[1] > 0) {
+				switch (board->lastInsert)
+				{
+				case 'z':
+					if (board->sentido == '←') {
+						if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'z') {
+							board->sentido = '←';
 
-		switch (board->lastInsert)
-		{
-		case '-': {
-			//topo
-			if (board->lastWaterXY[0] == 0) {
-				//direita
-				if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == '-' || board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'S' || board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'D') {
+							board->lastWaterXY[1]--;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-					board->lastWaterXY[1]++;
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
 
-					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+						}
+						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 's') {
+							board->sentido = '↓';
 
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'E') {
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = '*';
-					return 1;
-				}
+							board->lastWaterXY[1]--;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-				//esquerda
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+						}
+						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'r') {
+							return -1;
+						}
+						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'e') {
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'a';
+							return 1;
+						}
+					}
+					else if (board->sentido == '→') {
+						if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'z') {
+							board->sentido = '→';
 
-				//baixo
-				else
+							board->lastWaterXY[1]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+
+						}
+						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'd') {
+							board->sentido = '↓';
+
+							board->lastWaterXY[1]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+						}
+						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'l') {
+							return -1;
+						}
+						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'e') {
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = 'E';
+							return 1;
+						}
+					}
+					break;
+				case 'x':
+					if (board->sentido == '↑') {
+							return -1;
+					}
+					else if (board->sentido == '↓') {
+						if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1] ] == 'x') {
+							board->sentido = '↓';
+
+							board->lastWaterXY[0]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+
+						}
+						else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1] ] == 'r') {
+							board->sentido = '→';
+
+							board->lastWaterXY[0]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+						}
+						else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1] ] == 'l') {
+							board->sentido = '←';
+
+							board->lastWaterXY[0]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+						}
+					
+					}
+					break;
+				case 's':
+					if (board->sentido == '↓'){
+						if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'x') {
+							board->sentido = '↓';
+
+							board->lastWaterXY[0]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+
+						}
+						else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'r') {
+							board->sentido = '→';
+
+							board->lastWaterXY[0]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+						}
+						else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'l') {
+							board->sentido = '←';
+
+							board->lastWaterXY[0]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+						}
+					}
+					else if (board->sentido == '→') {
+						if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'z') {
+							board->sentido = '→';
+
+							board->lastWaterXY[1]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+
+						}
+						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'd') {
+							board->sentido = '↓';
+
+							board->lastWaterXY[1]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+						}
+						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'l') {
+							return -1;
+						}
+					}
+					break;
+				case 'r':
 					return -1;
+					break;
+				case 'd':
+					if (board->sentido == '←') {
+						if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'z') {
+							board->sentido = '←';
 
-			}
-			//Fundo
-			else if (board->lastWaterXY[0] == board->actualSize - 1) {
-				//direita
-				if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == '-' || board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'S' || board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'D') {
+							board->lastWaterXY[1]--;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-					board->lastWaterXY[1]++;
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
 
-					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+						}
+						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 's') {
+							board->sentido = '↓';
 
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'E') {
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = '*';
-					return 1;
-				}
-				//esquerda
-				if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == '-') {
+							board->lastWaterXY[1]--;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-					board->lastWaterXY[1]--;
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+						}
+						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'r') {
+							return -1;
+						}
+						else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'e') {
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'E';
+							return 1;
+						}
+					}
+					if (board->sentido == '↓') {
+						if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'x') {
+							board->sentido = '↓';
 
-					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+							board->lastWaterXY[0]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'E') {
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = '*';
-					return 1;
-				}
-				//cima
-				else
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+
+						}
+						else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1] ] == 'l') {
+							board->sentido = '←';
+
+							board->lastWaterXY[0]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+						}
+						else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'r') {
+							board->sentido = '→';
+
+							board->lastWaterXY[0]++;
+							board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+							board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+							return 0;
+						}
+					}
+					break;
+				case 'l':
 					return -1;
-			}
-
-			//meio
-			else
+					break;
+				}
+		}
+		else if (board->lastWaterXY[0] == board->actualSize - 1 && board->lastWaterXY[1] < board->actualSize - 1 && board->lastWaterXY[1] > 0) {
+			switch (board->lastInsert)
 			{
-				//direita
-				if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == '-' || board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'S' || board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'D') {
+			case 'z':
+				if (board->sentido == '←') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'z') {
+						board->sentido = '←';
 
-					board->lastWaterXY[1]++;
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
 
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
-					return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 's') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'r') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'E';
+						return 1;
+					}
 				}
-				else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'E') {
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = '*';
-					return 1;
+				else if (board->sentido == '→') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'z') {
+						board->sentido = '→';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'l') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'd') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = 'E';
+						return 1;
+					}
 				}
-				//esquerda
-
-				//cima
-
-				//baixo
-				else
-					return -1;
-			}
-
-			break;
-		}
-
-		case '|': {
-
-			//topo
-			if (board->lastWaterXY[0] == 0) {
-				if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == '|') {
-
-					board->lastWaterXY[0]++;
-
-					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
-
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
-					return 0;
-				}
-			}
-
-			//Fundo
-			else if (board->lastWaterXY[0] == board->actualSize - 1) {
+				break;
+			case 'x':
 				return -1;
+				break;
+			case 's':
+				return -1;
+				break;
+			case 'r':
+				return -1;
+				break;
+			case 'd':
+				return -1;
+				break;
+			case 'l':
+				if (board->sentido == '←') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'z') {
+						board->sentido = '←';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'r') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 's') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'a';
+						return 1;
+					}
+				
+				}
+				else if (board->sentido == '↑') {
+					if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'd') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1] ] == 's') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+				}
+				
+				break;
 			}
-			//meio
-			else
+		}
+		else if (board->lastWaterXY[1] == 0 && board->lastWaterXY[0] < board->actualSize - 1 && board->lastWaterXY[0] > 0) {
+			switch (board->lastInsert)
 			{
-				//cima
-				if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == '|' || board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == '┏' || board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == '┓') {
-
-					board->lastWaterXY[0]--;
-
-					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
-
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E') {
-					board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] = '*';
-					return 1;
-				}
-
-				//baixo
-				if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == '|' || board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'L' || board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'R') {
-					board->lastWaterXY[0]++;
-
-					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
-
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'E') {
-					board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] = '*';
-					return 1;
-				}
-				else
-					return -1;
-			}
-
-			break;
-		}
-
-				// ┛
-		case 'S': {
-			//topo
-			if (board->lastWaterXY[0] == 0) {
+			case 'z':
 				return -1;
-			}
-			else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E') {
-				board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] = '*';
-				return 1;
-			}
-			//fundo
-			//meio
-			else {
-				if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == '|' || board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == '┏' || board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == '┓') {
-					board->lastWaterXY[0]--;
+				break;
+			case 'x':
+				if(board->sentido == '↑') {
+					if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↑';
 
-					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
-					return 0;
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 's') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'd') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E';
+						return 1;
+					}
 				}
-				else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E') {
-					board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] = '*';
-					return 1;
+				else if (board->sentido == '↓') {
+					if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'r') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'l') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'E';
+						return 1;
+					}
 				}
-			}
+				break;
+			case 's':
+				if (board->sentido == '→') {
+					if (board->board[board->lastWaterXY[0] ][board->lastWaterXY[1] + 1] == 'z') {
+						board->sentido = '→';
 
-			break;
-		}
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-				// ┓
-		case 'D': {
-			//fundo
-			if (board->lastWaterXY[0] == board->actualSize - 1) {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'd') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'l') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+				}
+				else if (board->sentido == '↓') {
+					if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'r') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'l') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+
+				}
+				break;
+			case 'r':
+				if (board->sentido == '→') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'z') {
+						board->sentido = '→';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'd') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'l') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+				}
+				else if (board->sentido == '↑') {
+					if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 's') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'd') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] = 'E';
+						return 1;
+					}
+
+				}
+				break;
+			case 'd':
 				return -1;
+				break;
+			case 'l':
+				return -1;
+				break;
 			}
-			else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'E') {
-				board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] = '*';
-				return 1;
-			}
-			//topo/meio
-			else
+		}
+		else if (board->lastWaterXY[1] == board->actualSize - 1 && board->lastWaterXY[0] < board->actualSize - 1 && board->lastWaterXY[0] > 0) {
+			switch (board->lastInsert)
 			{
-				if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == '|' || board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == '┛' || board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == '┗') {
+			case 'z':
+				return -1;
+				break;
+			case 'x':
+				if (board->sentido == '↑') {
+					if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↑';
 
-					board->lastWaterXY[0]++;
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-					board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
 
-					board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
-					return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'd') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 's') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E';
+						return 1;
+					}
 				}
-				else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'E') {
-					board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] = '*';
-					return 1;
+				else if (board->sentido == '↓') {
+					if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'l') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'r') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'E';
+						return 1;
+					}
+				
 				}
+				break;
+			case 's':
+				return -1;
+				break;
+			case 'r':
+				return -1;
+				break;
+			case 'd':
+				if (board->sentido == '←') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'z') {
+						board->sentido = '←';
 
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 's') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'r') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+				
+				}
+				else if (board->sentido == '↓') {
+					if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'l') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'r') {
+						return -1;
+
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'E';
+						return 1;
+
+					}
+				
+				}
+				break;
+			case 'l':
+				if (board->sentido == '←') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'z') {
+						board->sentido = '←';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 's') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'r') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+
+				}
+				else if (board->sentido == '↑') {
+					if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'd') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 's') {
+						return -1;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E';
+						return 1;
+
+					}
+
+				}
+				break;
 			}
-
-			break;
 		}
+		else if (board->lastWaterXY[0] == 0 && board->lastWaterXY[1] == 0) {
+			switch (board->lastInsert)
+			{
+			case 'z':
+				return -1;
+				break;
+			case 'x':
+				return -1;
+				break;
+			case 's':
+				if (board->sentido == '→') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'z') {
+						board->sentido = '→';
 
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-		case 'L': {
-			if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == '-') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
 
-				board->lastWaterXY[1]--;
+					}
+					else if (board->board[board->lastWaterXY[0] ][board->lastWaterXY[1] + 1] == 'd') {
+						board->sentido = '↓';
 
-				board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-				board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
-				return 0;
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'l') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = 'a';
+						return 1;
+					}
+
+				}
+				else if (board->sentido == '↓') {
+					if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'r') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'l') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+				}
+				break;
+			case 'r':
+				return -1;
+				break;
+			case 'd':
+				return -1;
+				break;
+			case 'l':
+				return -1;
+				break;
 			}
-			else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'E') {
-				board->board[board->lastWaterXY[0]][board->lastWaterXY[1]-1] = '*';
-				return 1;
-			}
-			break;
 		}
+		else if (board->lastWaterXY[0] == 0 && board->lastWaterXY[1] == board->actualSize - 1) {
+			switch (board->lastInsert)
+			{
+			case 'z':
+				return -1;
+				break;
+			case 'x':
+				return -1;
+				break;
+			case 's':
+				return -1;
+				break;
+			case 'r':
+				return -1;
+				break;
+			case 'd':
+				if (board->sentido == '←') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'z') {
+						board->sentido = '←';
 
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-		case 'R': {
-			if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == '-') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
 
-				board->lastWaterXY[1]++;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 's') {
+						board->sentido = '↓';
 
-				board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-				board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = '*';
-				return 0;
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'r') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'a';
+						return 1;
+					}
+
+				}
+				else if (board->sentido == '↓') {
+					if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'l') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'r') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+				}
+				break;
+			case 'l':
+				return -1;
+				break;
 			}
-			else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'E') {
-				board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = '*';
-				return 1;
+		}
+		else if (board->lastWaterXY[0] == board->actualSize - 1 && board->lastWaterXY[1] == 0) {
+			switch (board->lastInsert)
+			{
+			case 'z':
+				return -1;
+				break;
+			case 'x':
+				return -1;
+				break;
+			case 's':
+				return -1;
+				break;
+			case 'r':
+				if (board->sentido == '→') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'z') {
+						board->sentido = '→';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'd') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'l') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = 'a';
+						return 1;
+					}
+
+				}
+				else if (board->sentido == '↑') {
+					if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 's') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'd') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+				}
+				break;
+			case 'd':
+				return -1;
+				break;
+			case 'l':
+				return -1;
+				break;
 			}
-			break;
 		}
+		else if (board->lastWaterXY[0] == board->actualSize - 1 && board->lastWaterXY[1] == board->actualSize - 1) {
+			switch (board->lastInsert)
+			{
+			case 'z':
+				return -1;
+				break;
+			case 'x':
+				return -1;
+				break;
+			case 's':
+				return -1;
+				break;
+			case 'r':
+				return -1;
+				break;
+			case 'd':
+				return -1;
+				break;
+			case 'l':
+				if (board->sentido == '→') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'z') {
+						board->sentido = '→';
 
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
 
-		default:
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
 
-			break;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'd') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'l') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = 'a';
+						return 1;
+					}
+
+				}
+				if (board->sentido == '↑') {
+					if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'd') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 's') {
+						return -1;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+
+				}
+				else if(board->sentido == '←') {
+				}
+				break;
+			}
 		}
+		else {
+			switch (board->lastInsert)
+			{
+			case 'z':
+				if (board->sentido == '←') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'z') {
+						board->sentido = '←';
 
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 's') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'r') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'a';
+						return 1;
+					}
+				}
+				else if (board->sentido == '→') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'z') {
+						board->sentido = '→';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'd') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'l') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'E';
+						return 1;
+					}
+				}
+				break;
+			case 'x':
+				if (board->sentido == '↑') {
+					if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 's') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'd') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'E';
+						return 1;
+					}
+				}
+				else if (board->sentido == '↓') {
+					if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'r') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'l') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'a';
+						return 1;
+					}
+				}
+				break;
+			case 's':
+				if (board->sentido == '→') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'z') {
+						board->sentido = '→';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'd') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'l') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] = 'E';
+						return 1;
+					}
+
+				}
+				else if (board->sentido == '↓') {
+					if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'r') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'l') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+				}
+				break;
+			case 'r':
+				if (board->sentido == '→') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'z') {
+						board->sentido = '→';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'd') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] + 1] == 'l') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+				}
+				else if (board->sentido == '↑') {
+					if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 's') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'd') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+				break;
+			case 'd':
+				if (board->sentido == '←') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'z') {
+						board->sentido = '←';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 's') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'r') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'a';
+						return 1;
+					}
+				}
+				if (board->sentido == '↓') {
+					if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'l') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'r') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]++;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] + 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] = 'a';
+						return 1;
+					}
+				}
+				break;
+			case 'l':
+				if (board->sentido == '←') {
+					if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'z') {
+						board->sentido = '←';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 's') {
+						board->sentido = '↓';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'r') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[1]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1] - 1] == 'a';
+						return 1;
+
+					}
+
+				}
+				else if (board->sentido == '↑') {
+					if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'x') {
+						board->sentido = '↑';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'd') {
+						board->sentido = '←';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 's') {
+						board->sentido = '→';
+
+						board->lastWaterXY[0]--;
+						board->lastInsert = board->board[board->lastWaterXY[0]][board->lastWaterXY[1]];
+
+						board->board[board->lastWaterXY[0]][board->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'e') {
+						board->board[board->lastWaterXY[0] - 1][board->lastWaterXY[1]] == 'a';
+						return 1;
+
+					}
+
+				}
+				break;
+			}
+
+		} 
+
+		
+}
+
+DWORD placePeca(Board* board, char peca, int x, int y, int player) {
+	//falta a parte de escolher em qual board é para meter a peça 
+	if (board->board[x][y] != 'W' && board->board[x][y] != '*') {
+		board->board[x][y] = peca;
 	}
-
-	return -2;
 }
 
 void printBoard(Board* aux) {
