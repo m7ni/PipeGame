@@ -230,16 +230,17 @@ int _tmain(int argc, TCHAR* argv[]) {
 	_ftprintf(stderr, TEXT("já temos a resposta do jogador ->> %d\n"),TP.pipeDataInitial->solo);
 
 
-	setupBoard(&KB.memDados, KB.registoDados.actualSize, TP.pipeDataInitial->solo); //dependendo de ser solo ou comp, vai criar um ou dois tabuleiros
+	setupBoard(&KB.memDados, KB.registoDados.actualSize,TP.numPlayer); //dependendo de ser solo ou comp, vai criar um ou dois tabuleiros
 
 
 
-
-
+	
 	Board aux;
 	WaitForSingleObject(KB.memDados.mutexBoard, INFINITE);
 	CopyMemory(&aux, KB.memDados.VBoard, sizeof(Board));
 	ReleaseMutex(KB.memDados.mutexBoard);
+	aux.player[0].actualSize = aux.actualSize;
+
 	TG1.id = 0;
 	TG1.pipeData->player = aux.player[0];
 	TG1.hPipe = TP.hPipe[0];
@@ -257,6 +258,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 		TG2.mutexP = TP.hMutex;
 		TG2.pipeData->player = aux.player[1];
 		TG1.id = 1;
+		aux.player[1].actualSize = aux.actualSize;
 		if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadInsertPipe, &TG2, 0, NULL)) == NULL)
 		{
 			_ftprintf(stderr, TEXT("Error creating Thread responsible for thePipes\n"));
@@ -268,7 +270,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &TP, 0, NULL)) == NULL)
 	{
 		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Water\n"));
-		return -1;
+//		return -1;
 	}
 
 
@@ -284,7 +286,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 	PTHREADPIPE data = (PTHREADPIPE)param;
-	//WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
+	
 	data->memDados->flagMonitorComand = 0;
 	Board aux;
 	SetEvent(data->sinc->printBoard);
@@ -293,14 +295,16 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 	for (DWORD i = 0; i < data->numPlayer; ++i) {
 		if (data->hPipe->active) {
 			if (!WriteFile(data->hPipe[i].hInstance, data->playerServ[i]->pipeData, sizeof(Pipe), &n, NULL)) {
-				_tprintf(TEXT("[ERRO] Escrever no pipe! (WriteFile)\n"));
+				_tprintf(TEXT("[ERRO] Escrever no pipe! Water Running 1 (WriteFile)\n"));
 				exit(-1);
 			}
 		}
 	}
+	WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
 	_tprintf(TEXT("ThreadWaterRunning - Enviei pela primeira vez as boards para os clientes \n"));
+	_ftprintf(stderr, TEXT("-----------> Water Running in %d seconds\n"), data->timeR);
+
 	while (&data->continua) {
-		_ftprintf(stderr, TEXT("-----------> Water Running in %d seconds\n"), data->timeR);
 		Sleep(data->timeR * 1000);
 
 		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
@@ -316,7 +320,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
 		CopyMemory(&aux, data->memDados->VBoard, sizeof(Board));
 		ReleaseMutex(data->memDados->mutexBoard);
-
+/*
 		for (DWORD i = 0; i < data->numPlayer; ++i) {
 			if (data->hPipe->active) {             //vamos inserir água nos jogadores que existem
 				res = insertWater(&aux.player[i].board); 
@@ -325,25 +329,27 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 				}
 			}
 		}
-
-		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
-		CopyMemory(data->memDados->VBoard, &aux, sizeof(Board));
-		ReleaseMutex(data->memDados->mutexBoard);
-
-
-		SetEvent(data->sinc->printBoard);
-		ResetEvent(data->sinc->printBoard);
-
-
+*/
+		aux.player[0].board[0][0] = 'w';
+		_tprintf(TEXT("passei pelo update\n"));
 		for (DWORD i = 0; i < data->numPlayer; ++i) {
 			if (data->hPipe->active) {
-				if (!WriteFile(data->playerServ[i]->hPipe.hInstance, data->playerServ[i]->pipeData, sizeof(Pipe), &n, NULL)) {
-					_tprintf(TEXT("[ERRO] Escrever no pipe! (WriteFile)\n"));
+				if (!WriteFile(data->hPipe[i].hInstance, data->playerServ[i]->pipeData, sizeof(Pipe), &n, NULL)) {
+					_tprintf(TEXT("[ERRO] Escrever no pipe! Water Running 2 (WriteFile)\n"));
 					exit(-1);
 				}
 			}
 		}
 
+		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
+		CopyMemory(data->memDados->VBoard, &aux, sizeof(Board));
+		ReleaseMutex(data->memDados->mutexBoard);
+
+		_tprintf(TEXT("meti na memoria\n"));
+		SetEvent(data->sinc->printBoard);
+		ResetEvent(data->sinc->printBoard);
+
+		/*
 		if (res == 1) {
 			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
 			//data->memDados->VBoard->win = 1;
@@ -362,6 +368,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
 			return 1;
 		}
+		*/
 	}
 }
 
@@ -369,9 +376,10 @@ DWORD WINAPI ThreadInsertPipe(LPVOID param) { //uma thread destas para cada Play
 	PTHREADGAME data = (PTHREADGAME)param;
 	DWORD n;
 	Board aux;
+	_tprintf(TEXT("inicio thread InsertPipe Player[%d]\n"),data->id);
 	while (&data->continua) {
 		if (!ReadFile(data->hPipe.hInstance, data->pipeData, sizeof(Pipe), &n, NULL)) {
-			_tprintf(TEXT("[ERRO] LER no pipe! (WriteFile)\n"));
+			_tprintf(TEXT("[ERRO] LER no pipe! (InsertPipe) (WriteFile)\n"));
 			exit(-1);
 		}
 
@@ -380,7 +388,7 @@ DWORD WINAPI ThreadInsertPipe(LPVOID param) { //uma thread destas para cada Play
 		ReleaseMutex(data->memDados->mutexBoard);
 
 		
-		putPipe(&aux.player[data->id], data->pipeData->player.desiredPiece);
+		//putPipe(&aux.player[data->id], data->pipeData->player.desiredPiece);
 
 		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
 		CopyMemory(data->memDados->VBoard, &aux, sizeof(Board));
@@ -438,12 +446,12 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 		if (*data->continua == 0) {
 			return 1;
 		}
-		/*
+		
 		if (wcscmp(comand, TEXT("start")) == 0) {
-			SetEvent(data->sinc->timerStartEvent);               <---- Não esquecer do evento que coloca a água a correr
+			SetEvent(data->sinc->timerStartEvent);             
 			_ftprintf(stderr, TEXT("-----------> Started\n"));
 		}
-		else*/
+		else
 		if (wcscmp(comand, TEXT("end")) == 0) {
 			SetEvent(data->sinc->endMonitor);
 			*data->continua = 0;

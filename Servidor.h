@@ -17,12 +17,14 @@ typedef struct {
 	unsigned int end[2];
 
 	unsigned int lastWaterXY[2];
-	unsigned int nextWaterXY[2];
+	char sentido; //←↑→↓
 	char lastInsert;
 
-	PLAY desiredPiece;
+	PLAY peca;
 	unsigned int win;
 	unsigned int lose;
+
+
 }PLAYER;
 
 typedef struct {
@@ -30,7 +32,6 @@ typedef struct {
 	unsigned int actualSize;		//actual size that we are playing
 	DWORD numP;
 }Board;
-
 
 
 // 9473  ━

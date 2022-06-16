@@ -1,514 +1,1749 @@
 ﻿#include "utils.h"
 
-void setupBoard(MemDados* aux, DWORD actualSize, DWORD numPlayers) {
+void setupBoard(MemDados* aux, DWORD actualSize,DWORD np) {
 	srand(time(NULL));
-	DWORD goUp;
 
 	WaitForSingleObject(aux->mutexBoard, INFINITE);
-	aux->VBoard->actualSize = actualSize;
-	aux->VBoard->player[0].win = 0;
-	aux->VBoard->player[1].win = 0;
+	for(DWORD p = 0; p<np;p++){
+		aux->VBoard->actualSize = actualSize;
+		aux->VBoard->player[p].win = 0;
+		aux->VBoard->player[p].actualSize = actualSize;
 
-	
-
-	for (DWORD p = 0; p < numPlayers; p++) {
 		for (DWORD i = 0; i < aux->VBoard->actualSize; i++) {
 			for (DWORD j = 0; j < aux->VBoard->actualSize; j++)
 			{
-				aux->VBoard->player[0].board[i][j] = '.';
+				aux->VBoard->player[p].board[i][j] = '.';
 			}
 		}
-	}
-	
 
-	DWORD lineBegin = rand() % aux->VBoard->actualSize;
-	DWORD lineEnd = rand() % aux->VBoard->actualSize;
+		DWORD lineBegin1 = rand() % aux->VBoard->actualSize;
+		DWORD lineEnd1 = rand() % aux->VBoard->actualSize;
 
+		DWORD lineBegin = (rand() % ((aux->VBoard->actualSize - 2) - 1 + 1)) + 1;
+		DWORD lineEnd = (rand() % ((aux->VBoard->actualSize - 2) - 1 + 1)) + 1;
 
-	for (DWORD p = 0; p < numPlayers; p++) {
-		aux->VBoard->player[p].begin[0] = lineBegin;
-		aux->VBoard->player[p].begin[1] = 0;
-		aux->VBoard->player[p].end[0] = lineEnd;
-		aux->VBoard->player[p].end[1] = aux->VBoard->actualSize;
-	}
+		DWORD startingSide = rand() % 4; // respetivo canto 0=←, 2=↑, 1=→, 3=↓
 
-
-/*
-	if (lineEnd > lineBegin) //temos que ir para baixo quando chegar ao lado direito da tabela
-	{
-		goUp = -1;
-	}
-	else if (lineEnd < lineBegin) {
-		goUp = 1;
-	} //temos que ir para cim quando chegar ao lado direito da tabela
-	else {
-		goUp = 0;
-	}
-
-	if (VoH == 0) { //caminho na horizontal 
-		aux->VBoard->begin[0] = lineBegin;
-		aux->VBoard->begin[1] = 0;
-		aux->VBoard->lastInsert = 'B';
-
-
-		aux->VBoard->board1[lineBegin][0] = 'B'; //begin position
-		aux->VBoard->board1[lineEnd][aux->VBoard->actualSize - 1] = 'E'; //end position
-
-
-		for (DWORD j = 1; j < aux->VBoard->actualSize - 1; j++) {
-			aux->VBoard->board1[lineBegin][j] = '-';
-		}
-
-		switch (goUp) {
-		case 1:
-			aux->VBoard->board1[lineBegin][aux->VBoard->actualSize - 1] = 'S';
-
-			for (DWORD i = lineBegin - 1; i > lineEnd; i--) {
-				aux->VBoard->board1[i][aux->VBoard->actualSize - 1] = '|';
-			}
-			break;
-		case -1:
-			aux->VBoard->board1[lineBegin][aux->VBoard->actualSize - 1] = 'D';
-
-			for (DWORD i = lineBegin + 1; i < lineEnd; i++) {
-				aux->VBoard->boar1[i][aux->VBoard->actualSize - 1] = '|';
-			}
-			break;
-
-		default:
-			break;
-		}
-
-	}
-	else { //caminho na vertical
-
-		aux->VBoard->begin[0] = 0;
-		aux->VBoard->begin[1] = lineBegin;
-		aux->VBoard->lastInsert = 'B';
-
-
-		aux->VBoard->board[0][lineBegin] = 'B'; //begin position
-		aux->VBoard->board[aux->VBoard->actualSize - 1][lineEnd] = 'E'; //end position
-
-		for (DWORD j = 1; j < aux->VBoard->actualSize - 1; j++) {
-			aux->VBoard->board[j][lineBegin] = '|';
-		}
-
-		switch (goUp) {
-		case 1:
-			aux->VBoard->board[aux->VBoard->actualSize - 1][lineBegin] = 'L';
-
-			for (DWORD i = lineBegin - 1; i > lineEnd; i--) {
-				aux->VBoard->board[aux->VBoard->actualSize - 1][i] = '-';
-			}
-			break;
-		case -1:
-			aux->VBoard->board[aux->VBoard->actualSize - 1][lineBegin] = 'R';
-
-			for (DWORD i = lineBegin + 1; i < lineEnd; i++) {
-				aux->VBoard->board[aux->VBoard->actualSize - 1][i] = '-';
-			}
-			break;
-
-		default:
-			break;
-		}
-
-	}
-	*/
-	ReleaseMutex(aux->mutexBoard);
-
-	/*
-	aux->pecas[0] = '━';
-	aux->pecas[1] = '┃';
-	aux->pecas[2] = '┏';
-	aux->pecas[3] = '━';
-	aux->pecas[4] = '┛';
-	aux->pecas[5] = '┗';
-	*/
-
-
-
-}
-
-DWORD insertWater(Board* board,DWORD p) {
-
-	if (board->player[p].lastInsert == 'B') {
-
-		board->player[p].lastWaterXY[0] = board->player[p].begin[0];
-		board->player[p].lastWaterXY[1] = board->player[p].begin[1];
-
-		if (board->player[p].board[board->player[p].begin[0]][board->player[p].begin[1] + 1] == '-')
-			board->player[p].lastInsert = '-';
-		else
-			board->player[p].lastInsert = '|';
-
-		board->player[p].board[board->player[p].begin[0]][board->player[p].begin[1]] = '*';
-
-		return 0;
-
-	}
-	else {
-
-		//_tprintf(TEXT("\nUltimo tubo: (%c) [%d][%d] \n"), board->player[p].lastInsert, board->player[p].lastWaterXY[0] + 1, board->player[p].lastWaterXY[1] + 1);
-
-		switch (board->player[p].lastInsert)
+		switch (startingSide)
 		{
-		case '-': {
-			//topo
-			if (board->player[p].lastWaterXY[0] == 0) {
-				//direita
-				if (board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == '-' || board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == 'S' || board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == 'D') {
+		case 0: //canto esquerdo 
+			aux->VBoard->player[0].board[lineBegin][0] = 'z';
+			aux->VBoard->player[1].board[lineBegin][0] = 'z';
 
-					board->player[p].lastWaterXY[1]++;
+			aux->VBoard->player[0].board[lineEnd][aux->VBoard->actualSize-1] = 'e';
+			aux->VBoard->player[1].board[lineEnd][aux->VBoard->actualSize-1] = 'e';
 
-					board->player[p].lastInsert = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
+			aux->VBoard->player[0].sentido = '→';
+			aux->VBoard->player[1].sentido = '→';
 
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == 'E') {
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] = '*';
-					return 1;
-				}
+			aux->VBoard->player[0].begin[0] = lineBegin;
+			aux->VBoard->player[0].begin[1] = 0;
 
-				//esquerda
-
-				//baixo
-				else
-					return -1;
-
-			}
-			//Fundo
-			else if (board->player[p].lastWaterXY[0] == board->actualSize - 1) {
-				//direita
-				if (board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == '-' || board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == 'S' || board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == 'D') {
-
-					board->player[p].lastWaterXY[1]++;
-
-					board->player[p].lastInsert = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
-
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == 'E') {
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] = '*';
-					return 1;
-				}
-				//esquerda
-				if (board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] - 1] == '-') {
-
-					board->player[p].lastWaterXY[1]--;
-
-					board->player[p].lastInsert = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
-
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] - 1] == 'E') {
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] - 1] = '*';
-					return 1;
-				}
-				//cima
-				else
-					return -1;
-			}
-
-			//meio
-			else
-			{
-				//direita
-				if (board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == '-' || board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == 'S' || board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == 'D') {
-
-					board->player[p].lastWaterXY[1]++;
-
-					board->player[p].lastInsert = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
-
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == 'E') {
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] = '*';
-					return 1;
-				}
-				//esquerda
-
-				//cima
-
-				//baixo
-				else
-					return -1;
-			}
-
+			aux->VBoard->player[1].begin[0] = lineBegin;
+			aux->VBoard->player[1].begin[1] = 0;
 			break;
-		}
+		case 1: //canto direito
+			aux->VBoard->player[0].board[lineBegin][aux->VBoard->actualSize-1] = 'z';
+			aux->VBoard->player[1].board[lineBegin][aux->VBoard->actualSize-1] = 'z';
 
-		case '|': {
+			aux->VBoard->player[0].board[lineEnd][0] = 'e';
+			aux->VBoard->player[1].board[lineEnd][0] = 'e';
 
-			//topo
-			if (board->player[p].lastWaterXY[0] == 0) {
-				if (board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] == '|') {
+			aux->VBoard->player[0].sentido = '←';
+			aux->VBoard->player[1].sentido = '←';
 
-					board->player[p].lastWaterXY[0]++;
+			aux->VBoard->player[0].begin[0] = lineBegin;
+			aux->VBoard->player[0].begin[1] = aux->VBoard->actualSize;
 
-					board->player[p].lastInsert = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
 
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]] = '*';
-					return 0;
-				}
-			}
-
-			//Fundo
-			else if (board->player[p].lastWaterXY[0] == board->actualSize - 1) {
-				return -1;
-			}
-			//meio
-			else
-			{
-				//cima
-				if (board->player[p].board[board->player[p].lastWaterXY[0] - 1][board->player[p].lastWaterXY[1]] == '|' || board->player[p].board[board->player[p].lastWaterXY[0] - 1][board->player[p].lastWaterXY[1]] == '┏' || board->player[p].board[board->player[p].lastWaterXY[0] - 1][board->player[p].lastWaterXY[1]] == '┓') {
-
-					board->player[p].lastWaterXY[0]--;
-
-					board->player[p].lastInsert = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
-
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->player[p].board[board->player[p].lastWaterXY[0] - 1][board->player[p].lastWaterXY[1]] == 'E') {
-					board->player[p].board[board->player[p].lastWaterXY[0] - 1][board->player[p].lastWaterXY[1]] = '*';
-					return 1;
-				}
-
-				//baixo
-				if (board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] == '|' || board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] == 'L' || board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] == 'R') {
-					board->player[p].lastWaterXY[0]++;
-
-					board->player[p].lastInsert = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
-
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] == 'E') {
-					board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] = '*';
-					return 1;
-				}
-				else
-					return -1;
-			}
-
+			aux->VBoard->player[1].begin[0] = lineBegin;
+			aux->VBoard->player[1].begin[1] = aux->VBoard->actualSize;
 			break;
-		}
 
-				// ┛
-		case 'S': {
-			//topo
-			if (board->player[p].lastWaterXY[0] == 0) {
-				return -1;
-			}
-			else if (board->player[p].board[board->player[p].lastWaterXY[0] - 1][board->player[p].lastWaterXY[1]] == 'E') {
-				board->player[p].board[board->player[p].lastWaterXY[0] - 1][board->player[p].lastWaterXY[1]] = '*';
-				return 1;
-			}
-			//fundo
-			//meio
-			else {
-				if (board->player[p].board[board->player[p].lastWaterXY[0] - 1][board->player[p].lastWaterXY[1]] == '|' || board->player[p].board[board->player[p].lastWaterXY[0] - 1][board->player[p].lastWaterXY[1]] == '┏' || board->player[p].board[board->player[p].lastWaterXY[0] - 1][board->player[p].lastWaterXY[1]] == '┓') {
-					board->player[p].lastWaterXY[0]--;
+		case 2: //canto superior
+			aux->VBoard->player[0].board[0][lineBegin] = 'x';
+			aux->VBoard->player[1].board[0][lineBegin] = 'x';
 
-					board->player[p].lastInsert = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
+			aux->VBoard->player[0].board[aux->VBoard->actualSize-1][lineEnd] = 'e';
+			aux->VBoard->player[1].board[aux->VBoard->actualSize-1][lineEnd] = 'e';
 
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->player[p].board[board->player[p].lastWaterXY[0] - 1][board->player[p].lastWaterXY[1]] == 'E') {
-					board->player[p].board[board->player[p].lastWaterXY[0] - 1][board->player[p].lastWaterXY[1]] = '*';
-					return 1;
-				}
-			}
+			aux->VBoard->player[0].sentido = '↓';
+			aux->VBoard->player[1].sentido = '↓';
 
+			aux->VBoard->player[0].begin[0] = 0;
+			aux->VBoard->player[0].begin[1] = lineBegin;
+
+			aux->VBoard->player[1].begin[0] = 0;
+			aux->VBoard->player[1].begin[1] = lineBegin;
 			break;
-		}
 
-				// ┓
-		case 'D': {
-			//fundo
-			if (board->player[p].lastWaterXY[0] == board->actualSize - 1) {
-				return -1;
-			}
-			else if (board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] == 'E') {
-				board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] = '*';
-				return 1;
-			}
-			//topo/meio
-			else
-			{
-				if (board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] == '|' || board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] == '┛' || board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] == '┗') {
+		case 3: //canto inferior
+			aux->VBoard->player[0].board[aux->VBoard->actualSize-1][lineBegin] = 'x';
+			aux->VBoard->player[1].board[aux->VBoard->actualSize-1][lineBegin] = 'x';
 
-					board->player[p].lastWaterXY[0]++;
+			aux->VBoard->player[0].board[0][lineEnd] = 'e';
+			aux->VBoard->player[1].board[0][lineEnd] = 'e';
 
-					board->player[p].lastInsert = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
+			aux->VBoard->player[0].sentido = '↑';
+			aux->VBoard->player[1].sentido = '↑';
 
-					board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]] = '*';
-					return 0;
-				}
-				else if (board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] == 'E') {
-					board->player[p].board[board->player[p].lastWaterXY[0] + 1][board->player[p].lastWaterXY[1]] = '*';
-					return 1;
-				}
+			aux->VBoard->player[0].begin[0] = aux->VBoard->actualSize;
+			aux->VBoard->player[0].begin[1] = lineBegin;
 
-			}
-
+			aux->VBoard->player[1].begin[0] = aux->VBoard->actualSize;
+			aux->VBoard->player[1].begin[1] = lineBegin;
 			break;
-		}
-
-
-		case 'L': {
-			if (board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] - 1] == '-') {
-
-				board->player[p].lastWaterXY[1]--;
-
-				board->player[p].lastInsert = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
-
-				board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]] = '*';
-				return 0;
-			}
-			else if (board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] - 1] == 'E') {
-				board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]-1] = '*';
-				return 1;
-			}
-			break;
-		}
-
-
-		case 'R': {
-			if (board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == '-') {
-
-				board->player[p].lastWaterXY[1]++;
-
-				board->player[p].lastInsert = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
-
-				board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]] = '*';
-				return 0;
-			}
-			else if (board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] == 'E') {
-				board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] = '*';
-				return 1;
-			}
-			break;
-		}
-
-
 		default:
-
 			break;
 		}
+		aux->VBoard->player[0].lastInsert = 'B';
+		aux->VBoard->player[1].lastInsert = 'B';
 
-	}
-
-	return -2;
-}
-
-void printBoard(Board* aux,DWORD p) {
-
-	for (DWORD l = 0; l < p; l++) {
-		_tprintf(TEXT(" -----------------PLAYER[p]-----------------"));
-		for (DWORD i = 0; i < aux->actualSize; i++) {
-			_tprintf(TEXT("\n"));
-			for (DWORD j = 0; j < aux->actualSize; j++)
-			{
-				_tprintf(TEXT(" %c"), aux->player[p].board[i][j]);
-			}
-		}
-		_tprintf(TEXT("\n"));
-	
-	}
-}
-
-DWORD putWall(MemDados* aux, DWORD posX, DWORD posY,DWORD p) {
-	WaitForSingleObject(aux->mutexBoard, INFINITE);
-
-	for (DWORD l = 0; l < p; l++) {
-		if (posX > aux->VBoard->actualSize || posY > aux->VBoard->actualSize || posX < 0 || posY < 0 || aux->VBoard->player[p].board[posX][posY] != '.') {
-			ReleaseMutex(aux->mutexBoard);
-			_ftprintf(stderr, TEXT("-----------> Cant place wall here: [%d][%d]\n"), posX, posX);
-			return -1;
-		}else {
-			aux->VBoard->player[p].board[posX][posY] = 'W';
-			_ftprintf(stderr, TEXT("-----------> Placed wall at [%d][%d]\n"), posX, posX);
-		}
 	}
 	ReleaseMutex(aux->mutexBoard);
-	return 1;
+
 }
 
-DWORD putPipe(PLAYER* board, TCHAR p) {
-	
-	return 1;
+DWORD insertWater(PLAYER* pData) 
+{
+	if (pData->lastInsert == 'B') {
+
+		if (pData->sentido == '←') {
+			if (pData->board[pData->begin[0]][pData->begin[1] - 1] == 'z') {
+				pData->sentido = '←';
+				pData->lastInsert = 'z';
+			}
+			else if (pData->board[pData->begin[0]][pData->begin[1] - 1] == 's') {
+				pData->sentido = '↓';
+				pData->lastInsert = 'z';
+			}
+			else if (pData->board[pData->begin[0]][pData->begin[1] - 1] == 'r') {
+				pData->sentido = '↑';
+				pData->lastInsert = 'z';
+			}
+
+
+		}
+		else if (pData->sentido == '→') {
+			if (pData->board[pData->begin[0]][pData->begin[1] + 1] == 'z') {
+				pData->sentido = '→';
+				pData->lastInsert = 'z';
+			}
+			else if (pData->board[pData->begin[0]][pData->begin[1] + 1] == 'd') {
+				pData->sentido = '↓';
+				pData->lastInsert = 'z';
+			}
+			else if (pData->board[pData->begin[0]][pData->begin[1] + 1] == 'l') {
+				pData->sentido = '↑';
+				pData->lastInsert = 'z';
+			}
+
+
+		}
+		else if (pData->sentido == '↑') {
+			if (pData->board[pData->begin[0] - 1][pData->begin[1]] == 'x') {
+				pData->sentido = '↑';
+				pData->lastInsert = 'x';
+			}
+			else if (pData->board[pData->begin[0] - 1][pData->begin[1]] == 'd') {
+				pData->sentido = '↓';
+				pData->lastInsert = 'x';
+			}
+			else if (pData->board[pData->begin[0] - 1][pData->begin[1]] == 's') {
+				pData->sentido = '↑';
+				pData->lastInsert = 'x';
+			}
+
+
+		}
+		else if (pData->sentido == '↓') {
+			if (pData->board[pData->begin[0] + 1][pData->begin[1]] == 'x') {
+				pData->sentido = '↓';
+				pData->lastInsert = 'x';
+			}
+			else if (pData->board[pData->begin[0] + 1][pData->begin[1]] == 'r') {
+				pData->sentido = '↓';
+				pData->lastInsert = 'x';
+			}
+			else if (pData->board[pData->begin[0] + 1][pData->begin[1]] == 'l') {
+				pData->sentido = '↑';
+				pData->lastInsert = 'x';
+			}
+
+
+		}
+
+		pData->lastWaterXY[0] = pData->begin[0];
+		pData->lastWaterXY[1] = pData->begin[1];
+
+		if (pData->lastInsert == 'x') {
+			pData->board[pData->begin[0]][pData->begin[1]] = 'X';
+			return 0;
+		}
+		else if (pData->lastInsert == 'z')
+		{
+			pData->board[pData->begin[0]][pData->begin[1]] = 'Z';
+			return 0;
+		}
+
+		return -1;
+
+	}
+	else {
+
+		if (pData->lastWaterXY[0] == 0 && pData->lastWaterXY[1] < pData->actualSize - 1 && pData->lastWaterXY[1] > 0) {
+			switch (pData->lastInsert)
+			{
+			case 'z':
+				if (pData->sentido == '←') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'z') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 's') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'r') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'e') {
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] = 'a';
+						return 1;
+					}
+				}
+				else if (pData->sentido == '→') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'z') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'd') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'l') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'e') {
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] = 'a';
+						return 1;
+					}
+				}
+				break;
+			case 'x':
+				if (pData->sentido == '↑') {
+					return -1;
+				}
+				else if (pData->sentido == '↓') {
+					if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'r') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'l') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+
+				}
+				break;
+			case 's':
+				if (pData->sentido == '↓') {
+					if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'r') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'l') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+				}
+				else if (pData->sentido == '→') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'z') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'd') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'l') {
+						return -1;
+					}
+				}
+				break;
+			case 'r':
+				return -1;
+				break;
+			case 'd':
+				if (pData->sentido == '←') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'z') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 's') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'r') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'e') {
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] = 'a';
+						return 1;
+					}
+				}
+				if (pData->sentido == '↓') {
+					if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'l') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'r') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+				}
+				break;
+			case 'l':
+				return -1;
+				break;
+			}
+		}
+		else if (pData->lastWaterXY[0] == pData->actualSize - 1 && pData->lastWaterXY[1] < pData->actualSize - 1 && pData->lastWaterXY[1] > 0) {
+			switch (pData->lastInsert)
+			{
+			case 'z':
+				if (pData->sentido == '←') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'z') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 's') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'r') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'e') {
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] = 'a';
+						return 1;
+					}
+				}
+				else if (pData->sentido == '→') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'z') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'l') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'd') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'e') {
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] = 'a';
+						return 1;
+					}
+				}
+				break;
+			case 'x':
+				return -1;
+				break;
+			case 's':
+				return -1;
+				break;
+			case 'r':
+				return -1;
+				break;
+			case 'd':
+				return -1;
+				break;
+			case 'l':
+				if (pData->sentido == '←') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'z') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'r') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 's') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'e') {
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] = 'a';
+						return 1;
+					}
+
+				}
+				else if (pData->sentido == '↑') {
+					if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'd') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 's') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+				}
+
+				break;
+			}
+		}
+		else if (pData->lastWaterXY[1] == 0 && pData->lastWaterXY[0] < pData->actualSize - 1 && pData->lastWaterXY[0] > 0) {
+			switch (pData->lastInsert)
+			{
+			case 'z':
+				return -1;
+				break;
+			case 'x':
+				if (pData->sentido == '↑') {
+					if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 's') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'd') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'e') {
+						pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'a';
+						return 1;
+					}
+				}
+				else if (pData->sentido == '↓') {
+					if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'r') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'l') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'e') {
+						pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'a';
+						return 1;
+					}
+				}
+				break;
+			case 's':
+				if (pData->sentido == '→') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'z') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'd') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'l') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+				}
+				else if (pData->sentido == '↓') {
+					if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'r') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'l') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'e') {
+						pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+
+				}
+				break;
+			case 'r':
+				if (pData->sentido == '→') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'z') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'd') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'l') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+				}
+				else if (pData->sentido == '↑') {
+					if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 's') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'd') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'e') {
+						pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+
+				}
+				break;
+			case 'd':
+				return -1;
+				break;
+			case 'l':
+				return -1;
+				break;
+			}
+		}
+		else if (pData->lastWaterXY[1] == pData->actualSize - 1 && pData->lastWaterXY[0] < pData->actualSize - 1 && pData->lastWaterXY[0] > 0) {
+			switch (pData->lastInsert)
+			{
+			case 'z':
+				return -1;
+				break;
+			case 'x':
+				if (pData->sentido == '↑') {
+					if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'd') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 's') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'e') {
+						pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'a';
+						return 1;
+					}
+				}
+				else if (pData->sentido == '↓') {
+					if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'l') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'r') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'e') {
+						pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'a';
+						return 1;
+					}
+
+				}
+				break;
+			case 's':
+				return -1;
+				break;
+			case 'r':
+				return -1;
+				break;
+			case 'd':
+				if (pData->sentido == '←') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'z') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 's') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'r') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+
+				}
+				else if (pData->sentido == '↓') {
+					if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'l') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'r') {
+						return -1;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'e') {
+						pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'a';
+						return 1;
+
+					}
+
+				}
+				break;
+			case 'l':
+				if (pData->sentido == '←') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'z') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 's') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'r') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+
+				}
+				else if (pData->sentido == '↑') {
+					if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'd') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 's') {
+						return -1;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'e') {
+						pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'a';
+						return 1;
+
+					}
+
+				}
+				break;
+			}
+		}
+		else if (pData->lastWaterXY[0] == 0 && pData->lastWaterXY[1] == 0) {
+			switch (pData->lastInsert)
+			{
+			case 'z':
+				return -1;
+				break;
+			case 'x':
+				return -1;
+				break;
+			case 's':
+				if (pData->sentido == '→') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'z') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'd') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'l') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'e') {
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] = 'a';
+						return 1;
+					}
+
+				}
+				else if (pData->sentido == '↓') {
+					if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'r') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'l') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'e') {
+						pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+				}
+				break;
+			case 'r':
+				return -1;
+				break;
+			case 'd':
+				return -1;
+				break;
+			case 'l':
+				return -1;
+				break;
+			}
+		}
+		else if (pData->lastWaterXY[0] == 0 && pData->lastWaterXY[1] == pData->actualSize - 1) {
+			switch (pData->lastInsert)
+			{
+			case 'z':
+				return -1;
+				break;
+			case 'x':
+				return -1;
+				break;
+			case 's':
+				return -1;
+				break;
+			case 'r':
+				return -1;
+				break;
+			case 'd':
+				if (pData->sentido == '←') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'z') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 's') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[1]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'r') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'e') {
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] = 'a';
+						return 1;
+					}
+
+				}
+				else if (pData->sentido == '↓') {
+					if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↓';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'l') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[0]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'r') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'e') {
+						pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+				}
+				break;
+			case 'l':
+				return -1;
+				break;
+			}
+		}
+		else if (pData->lastWaterXY[0] == pData->actualSize - 1 && pData->lastWaterXY[1] == 0) {
+			switch (pData->lastInsert)
+			{
+			case 'z':
+				return -1;
+				break;
+			case 'x':
+				return -1;
+				break;
+			case 's':
+				return -1;
+				break;
+			case 'r':
+				if (pData->sentido == '→') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'z') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'd') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'l') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'e') {
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] = 'a';
+						return 1;
+					}
+
+				}
+				else if (pData->sentido == '↑') {
+					if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 's') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'd') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'e') {
+						pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+				}
+				break;
+			case 'd':
+				return -1;
+				break;
+			case 'l':
+				return -1;
+				break;
+			}
+		}
+		else if (pData->lastWaterXY[0] == pData->actualSize - 1 && pData->lastWaterXY[1] == pData->actualSize - 1) {
+			switch (pData->lastInsert)
+			{
+			case 'z':
+				return -1;
+				break;
+			case 'x':
+				return -1;
+				break;
+			case 's':
+				return -1;
+				break;
+			case 'r':
+				return -1;
+				break;
+			case 'd':
+				return -1;
+				break;
+			case 'l':
+				if (pData->sentido == '→') {
+					if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'z') {
+						pData->sentido = '→';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'd') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'l') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[1]++;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'e') {
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] = 'a';
+						return 1;
+					}
+
+				}
+				if (pData->sentido == '↑') {
+					if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'x') {
+						pData->sentido = '↑';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'd') {
+						pData->sentido = '←';
+
+						pData->lastWaterXY[0]--;
+						pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+						pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+						return 0;
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 's') {
+						return -1;
+					}
+					else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'e') {
+						pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] = 'a';
+						return 1;
+					}
+
+				}
+				else if (pData->sentido == '←') {
+				}
+				break;
+			}
+		}
+		else {
+		switch (pData->lastInsert)
+		{
+		case 'z':
+			if (pData->sentido == '←') {
+				if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'z') {
+					pData->sentido = '←';
+
+					pData->lastWaterXY[1]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 's') {
+					pData->sentido = '↓';
+
+					pData->lastWaterXY[1]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'r') {
+					pData->sentido = '↑';
+
+					pData->lastWaterXY[1]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'e') {
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] = 'a';
+					return 1;
+				}
+			}
+			else if (pData->sentido == '→') {
+				if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'z') {
+					pData->sentido = '→';
+
+					pData->lastWaterXY[1]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'd') {
+					pData->sentido = '↓';
+
+					pData->lastWaterXY[1]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'l') {
+					pData->sentido = '↑';
+
+					pData->lastWaterXY[1]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'e') {
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] = 'a';
+					return 1;
+				}
+			}
+			break;
+		case 'x':
+			if (pData->sentido == '↑') {
+				if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'x') {
+					pData->sentido = '↑';
+
+					pData->lastWaterXY[0]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 's') {
+					pData->sentido = '→';
+
+					pData->lastWaterXY[0]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'd') {
+					pData->sentido = '←';
+
+					pData->lastWaterXY[0]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'e') {
+					pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'a';
+					return 1;
+				}
+			}
+			else if (pData->sentido == '↓') {
+				if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'x') {
+					pData->sentido = '↓';
+
+					pData->lastWaterXY[0]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'r') {
+					pData->sentido = '→';
+
+					pData->lastWaterXY[0]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'l') {
+					pData->sentido = '←';
+
+					pData->lastWaterXY[0]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'e') {
+					pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'a';
+					return 1;
+				}
+			}
+			break;
+		case 's':
+			if (pData->sentido == '→') {
+				if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'z') {
+					pData->sentido = '→';
+
+					pData->lastWaterXY[1]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'd') {
+					pData->sentido = '↓';
+
+					pData->lastWaterXY[1]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'l') {
+					pData->sentido = '↑';
+
+					pData->lastWaterXY[1]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'e') {
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] = 'a';
+					return 1;
+				}
+
+			}
+			else if (pData->sentido == '↓') {
+				if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'x') {
+					pData->sentido = '↓';
+
+					pData->lastWaterXY[0]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'r') {
+					pData->sentido = '→';
+
+					pData->lastWaterXY[0]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'l') {
+					pData->sentido = '←';
+
+					pData->lastWaterXY[0]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'e') {
+					pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] = 'a';
+					return 1;
+				}
+			}
+			break;
+		case 'r':
+			if (pData->sentido == '→') {
+				if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'z') {
+					pData->sentido = '→';
+
+					pData->lastWaterXY[1]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'd') {
+					pData->sentido = '↓';
+
+					pData->lastWaterXY[1]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] + 1] == 'l') {
+					pData->sentido = '↑';
+
+					pData->lastWaterXY[1]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+			}
+			else if (pData->sentido == '↑') {
+				if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'x') {
+					pData->sentido = '↑';
+
+					pData->lastWaterXY[0]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 's') {
+					pData->sentido = '→';
+
+					pData->lastWaterXY[0]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'd') {
+					pData->sentido = '←';
+
+					pData->lastWaterXY[0]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'e') {
+					pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] = 'a';
+					return 1;
+				}
+				break;
+		case 'd':
+			if (pData->sentido == '←') {
+				if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'z') {
+					pData->sentido = '←';
+
+					pData->lastWaterXY[1]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 's') {
+					pData->sentido = '↓';
+
+					pData->lastWaterXY[1]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'r') {
+					pData->sentido = '↑';
+
+					pData->lastWaterXY[1]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'e') {
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] = 'a';
+					return 1;
+				}
+			}
+			if (pData->sentido == '↓') {
+				if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'x') {
+					pData->sentido = '↓';
+
+					pData->lastWaterXY[0]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'l') {
+					pData->sentido = '←';
+
+					pData->lastWaterXY[0]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'r') {
+					pData->sentido = '→';
+
+					pData->lastWaterXY[0]++;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0] + 1][pData->lastWaterXY[1]] == 'e') {
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] = 'a';
+					return 1;
+				}
+			}
+			break;
+		case 'l':
+			if (pData->sentido == '←') {
+				if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'z') {
+					pData->sentido = '←';
+
+					pData->lastWaterXY[1]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 's') {
+					pData->sentido = '↓';
+
+					pData->lastWaterXY[1]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'r') {
+					pData->sentido = '↑';
+
+					pData->lastWaterXY[1]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+				}
+				else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'e') {
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1] - 1] == 'a';
+					return 1;
+
+				}
+
+			}
+			else if (pData->sentido == '↑') {
+				if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'x') {
+					pData->sentido = '↑';
+
+					pData->lastWaterXY[0]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'd') {
+					pData->sentido = '←';
+
+					pData->lastWaterXY[0]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 's') {
+					pData->sentido = '→';
+
+					pData->lastWaterXY[0]--;
+					pData->lastInsert = pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]];
+
+					pData->board[pData->lastWaterXY[0]][pData->lastWaterXY[1]] = 'a';
+					return 0;
+
+				}
+				else if (pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'e') {
+					pData->board[pData->lastWaterXY[0] - 1][pData->lastWaterXY[1]] == 'a';
+					return 1;
+
+				}
+
+			}
+			break;
+
+			}
+			}
+		}
+	}
 }
+		DWORD placePeca(Board *b,MemDados *aux, char peca, int posX, int posY, int player) {
+		
+			WaitForSingleObject(aux->mutexBoard, INFINITE);
+			for (DWORD i = 0; i < b->numP;i++) {
+				if (posX > aux->VBoard->actualSize || posY > aux->VBoard->actualSize || posX < 0 || posY < 0 || aux->VBoard->player[i].board[posX][posY] != '.') {
+					ReleaseMutex(aux->mutexBoard);
+					_ftprintf(stderr, TEXT("-----------> Cant place wall here: [%d][%d]\n"), posX, posX);
+					return -1;
+				}
+				else {
+					aux->VBoard->player[i].board[posX][posY] = 'W';
+					_ftprintf(stderr, TEXT("-----------> Placed wall at [%d][%d]\n"), posX, posX);
+				}
+			}
+			
 
-//DWORD insertWater2(Board* board, DWORD p) {
-//	//zd,zl,xr,xl,sz,sd,sl,rz,rd,rl,dx,dr,dl,lx,ls,ld
-//	TCHAR teste;
-//
-//	switch (board->player[p].lastInsert) {
-//	case 'z':
-//		teste = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] +1];
-//		if (teste != 'd' || teste != 'l') {
-//			return -1;
-//		}
-//		board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] + 1] = toupper(teste); //atualizar a matriz
-//		board->player[p].lastWaterXY[1] = board->player[p].lastWaterXY[1] + 1; //atualizar a posição da ultima água
-//		board->player[p].lastInsert = teste; //guardar o ultimo tubo comido
-//
-//		if (teste == 'd') {
-//			board->player[p].nextWaterXY[0] = board->player[p].lastWaterXY[0] + 1;
-//			board->player[p].nextWaterXY[1] = board->player[p].lastWaterXY[1];
-//		}
-//		if (teste == 'l') {
-//			board->player[p].nextWaterXY[0] = board->player[p].lastWaterXY[0] - 1;
-//			board->player[p].nextWaterXY[1] = board->player[p].lastWaterXY[1];
-//		}
-//	
-//		break;
-//	case 'x':
-//		if(board->player[p].nextWaterXY[0])
-//		teste = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
-//		if (teste != 'r' || teste != 'l') {
-//			return 1;
-//		}
-//		break;
-//
-//	case 's':
-//		teste = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] ];
-//		if (teste != 'z' || teste != 'd' || teste != 'l') {
-//			return 1;
-//		}
-//		break;
-//
-//	case 'r':
-//		teste = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1]];
-//		if (teste != 'z' || teste != 'd' || teste != 'l') {
-//			return 1;
-//		}
-//		break;
-//	case 'd':
-//		teste = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] ];
-//		if (teste != 'x' || teste != 'r' || teste != 'l') {
-//			return 1;
-//		}
-//		break;
-//	case 'l':
-//		teste = board->player[p].board[board->player[p].lastWaterXY[0]][board->player[p].lastWaterXY[1] ];
-//		if (teste != 'x' || teste != 's' || teste != 'd') {
-//			return 1;
-//		}
-//		break;
-//
-//	}
-//
-//	
-//	
-//	return 1;
-//}
+			ReleaseMutex(aux->mutexBoard);
+			
+		}
 
+		void printBoard(Board * aux) {
+			for (DWORD i = 0; i < aux->numP; i++) {
+				_tprintf(TEXT("--------PLAYER [i]---------"));
+				for (DWORD i = 0; i < aux->actualSize; i++) {
+					_tprintf(TEXT("\n"));
+					for (DWORD j = 0; j < aux->actualSize; j++)
+					{
+						_tprintf(TEXT(" %c"), aux->player[i].board[i][j]);
+					}
+				}
+				_tprintf(TEXT("\n"));
+			}
+		}
+
+		DWORD putWall(Board* b, MemDados* aux, DWORD posX, DWORD posY) {
+		
+			WaitForSingleObject(aux->mutexBoard, INFINITE);
+			for (DWORD i = 0; i < b->numP; i++) {
+				if (posX > aux->VBoard->actualSize || posY > aux->VBoard->actualSize || posX < 0 || posY < 0 || aux->VBoard->player[i].board[posX][posY] != '.') {
+					ReleaseMutex(aux->mutexBoard);
+					_ftprintf(stderr, TEXT("-----------> Cant place wall here: [%d][%d]\n"), posX, posX);
+					return -1;
+				}
+				else {
+					aux->VBoard->player[i].board[posX][posY] = 'W';
+					_ftprintf(stderr, TEXT("-----------> Placed wall at [%d][%d]\n"), posX, posX);
+				}
+			}
+			ReleaseMutex(aux->mutexBoard);
+			return 1;
+		}

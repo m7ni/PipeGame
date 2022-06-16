@@ -51,7 +51,7 @@ typedef struct {   //comunicar pelo pipe
 	TabImagens tabImages[20][20];
 	Images imagensP;
 	HANDLE read;
-	HANDLE *hPipe;
+	HANDLE hPipe;
 	
 	int current_image;
 	TCHAR current_pipe;
@@ -61,6 +61,7 @@ typedef struct {   //comunicar pelo pipe
 	HWND hWnd;
 	BITMAP bmp;
 
+	unsigned int ft;
 } Pipe;
 
 typedef struct { 

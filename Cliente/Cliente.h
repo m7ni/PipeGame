@@ -1,6 +1,7 @@
 ﻿#pragma once
 #ifndef CLIENTE_H
 #define CLIENTE_H
+
 #include "resource.h"
 #include <windows.h>
 #include <tchar.h>
@@ -15,7 +16,7 @@
 
 typedef struct {
 	BITMAP bitmap;
-	HDC DC;
+	HDC	DC;
 } Image;
 
 typedef struct {
@@ -29,6 +30,8 @@ typedef struct {
 	Image Right_1_90;
 	Image blank;
 	Image water;
+	Image beginU;
+	Image beginH;
 	HANDLE mutex;
 	Image barrier;
 }Images;

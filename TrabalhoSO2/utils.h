@@ -10,7 +10,8 @@
 
 
 LARGE_INTEGER intToLargeInt(int i);
-void setupBoard(MemDados* aux, DWORD actualSize,DWORD p);
-void printBoard(MemDados* dados, DWORD p);
-DWORD putWall(MemDados* aux, DWORD posX, DWORD posY, DWORD p);
-DWORD putPipe(Board* board, TCHAR p);
+void setupBoard(MemDados* aux, DWORD actualSize, DWORD np);
+DWORD insertWater(PLAYER* pData);
+DWORD placePeca(Board* b, MemDados* aux, char peca, int posX, int posY, int player);
+void printBoard(Board* aux);
+DWORD putWall(Board* b, MemDados* aux, DWORD posX, DWORD posY);
