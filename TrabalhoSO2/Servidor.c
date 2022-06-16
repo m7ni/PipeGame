@@ -297,11 +297,11 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 	PTHREADPIPE data = (PTHREADPIPE)param;
-	
+	DWORD fl = 1;
 	data->memDados->flagMonitorComand = 0;
 	Board aux;
 	SetEvent(data->sinc->printBoard);
-	DWORD n, res, playerLost;
+	DWORD n, res, playerLost = 3, playerWon = 1;
 	_tprintf(TEXT("ThreadWaterRunning\n"));
 
 	
@@ -322,8 +322,12 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 			ReleaseMutex(data->hMutex);
 		}
 
-		WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
-		Sleep(data->timeR * 1000);
+		if (fl == 1) {
+			WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
+			Sleep(data->timeR * 1000);
+			fl = 0;
+		}
+		
 
 		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
 
@@ -347,6 +351,9 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 				if (res == -1) {
 					playerLost = i;
 				}
+				else if(res == 1) {
+			
+				}
 			}
 			ReleaseMutex(data->hMutex);
 		}
@@ -361,38 +368,41 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 		}
 				
 		_tprintf(TEXT("vou meter na memoria\n"));
+
 		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
 		CopyMemory(data->memDados->VBoard, &aux, sizeof(Board));
 		ReleaseMutex(data->memDados->mutexBoard);
 
 		SetEvent(data->sinc->printBoard);
 		ResetEvent(data->sinc->printBoard);
-		/*for (DWORD i = 0; i < data->numPlayer; i++) {
+
+		for (DWORD i = 0; i < data->numPlayer; i++) {
 			if (data->hPipe->active) {
 				SetEvent(data->playerServ[i]->pipeData->eventRead);
 			}
 		}
-		*/
-		/*
-		if (res == 1) {
+		
+		
+		if (playerLost == 1 || playerLost ==0) {
 			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
-			//data->memDados->VBoard->win = 1;
+			data->memDados->VBoard->player[playerLost].lose = 1;
 			ReleaseMutex(data->memDados->mutexBoard);
-			_ftprintf(stderr, TEXT("\n\nYou Won\n"));
-			*data->continua = 0;
-			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
-			return 1;
-		}
-		else if (res == -1) {
 			_ftprintf(stderr, TEXT("\n\nYou Lost\n"));
+			*data->continua = 0;
+			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
+			return 1;
+		}
+
+		if (playerWon == 1 || playerWon == 0) {
+			_ftprintf(stderr, TEXT("\n\nYou Won\n"));
 			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
-			//data->memDados->VBoard->win = -1;
+			data->memDados->VBoard->player[playerWon].win = 1;
 			ReleaseMutex(data->memDados->mutexBoard);
 			*data->continua = 0;
 			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
 			return 1;
 		}
-		*/
+		
 	}
 	for (DWORD i = 0; i < data->numPlayer; i++)
 		SetEvent(data->hEvents[i]);
