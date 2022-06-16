@@ -352,55 +352,73 @@ break;
 		TCHAR buf[256], value = NULL;
 		DWORD n;
 
-		if (dados->tabImages[x][y].image == &dados->imagensP.blank)
-		{
-			dados->tabImages[x][y].image = &dados->imagensP.horizontal;
-			dados->player.peca.desiredPiece = 'z';
-		}
-		else if (dados->tabImages[x][y].image == &dados->imagensP.horizontal)
-		{
-			dados->tabImages[x][y].image = &dados->imagensP.vertical;
-			dados->player.peca.desiredPiece = 'x';
-		}
-		else if (dados->tabImages[x][y].image == &dados->imagensP.vertical) {
-			dados->tabImages[x][y].image = &dados->imagensP.Right90;
-			dados->player.peca.desiredPiece = 's';
-		}
-		else if (dados->tabImages[x][y].image == &dados->imagensP.Right90) {
-			dados->tabImages[x][y].image = &dados->imagensP.Left90;
-			dados->player.peca.desiredPiece = 'd';
+		if (dados->tabImages[y][x].image != &dados->imagensP.beginH &&
+			dados->tabImages[y][x].image != &dados->imagensP.beginU &&
+			dados->tabImages[y][x].image != &dados->imagensP.end &&
+			dados->tabImages[y][x].image != &dados->imagensP.barrier) {
 
+			if (dados->tabImages[x][y].image == &dados->imagensP.blank)
+			{
+				dados->tabImages[x][y].image = &dados->imagensP.horizontal;
+				dados->player.peca.desiredPiece = 'z';
+			}
+			else if (dados->tabImages[x][y].image == &dados->imagensP.horizontal)
+			{
+				dados->tabImages[x][y].image = &dados->imagensP.vertical;
+				dados->player.peca.desiredPiece = 'x';
+			}
+			else if (dados->tabImages[x][y].image == &dados->imagensP.vertical) {
+				dados->tabImages[x][y].image = &dados->imagensP.Right90;
+				dados->player.peca.desiredPiece = 's';
+			}
+			else if (dados->tabImages[x][y].image == &dados->imagensP.Right90) {
+				dados->tabImages[x][y].image = &dados->imagensP.Left90;
+				dados->player.peca.desiredPiece = 'd';
+
+			}
+			else if (dados->tabImages[x][y].image == &dados->imagensP.Left90) {
+				dados->tabImages[x][y].image = &dados->imagensP.Left_1_90;
+				dados->player.peca.desiredPiece = 'r';
+
+			}
+			else if (dados->tabImages[x][y].image == &dados->imagensP.Left_1_90) {
+				dados->tabImages[x][y].image = &dados->imagensP.Right_1_90;
+				dados->player.peca.desiredPiece = 'l';
+
+			}
+			else if (dados->tabImages[x][y].image == &dados->imagensP.Right_1_90) {
+				dados->tabImages[x][y].image = &dados->imagensP.horizontal;
+				dados->player.peca.desiredPiece = 'z';
+
+			}
+
+			dados->player.peca.x = x;
+			dados->player.peca.y = y;
+
+
+			if (!WriteFile(dados->hPipe, dados, sizeof(Pipe), &n, NULL)) {
+				return -1;
+			}
 		}
-		else if (dados->tabImages[x][y].image == &dados->imagensP.Left90) {
-			dados->tabImages[x][y].image = &dados->imagensP.Left_1_90;
-			dados->player.peca.desiredPiece = 'r';
-
-		}
-		else if (dados->tabImages[x][y].image == &dados->imagensP.Left_1_90) {
-			dados->tabImages[x][y].image = &dados->imagensP.Right_1_90;
-			dados->player.peca.desiredPiece = 'l';
-
-		}
-		else if (dados->tabImages[x][y].image == &dados->imagensP.Right_1_90) {
-			dados->tabImages[x][y].image = &dados->imagensP.horizontal;
-			dados->player.peca.desiredPiece = 'z';
-
-		}
-
-		dados->player.peca.x = x;
-		dados->player.peca.y = y;
-
-
-		if(!WriteFile(dados->hPipe, dados, sizeof(Pipe), &n, NULL)){
-			return -1;
-		}
-}
+	}
 
 void clear_cell(Pipe* dados, DWORD y, DWORD x) {
-	if (dados->tabImages[y][x].image != &dados->imagensP.beginH && dados->tabImages[y][x].image != &dados->imagensP.beginU && dados->tabImages[y][x].image != &dados->imagensP.end && dados->tabImages[y][x].image != &dados->imagensP.barrier) {
+	DWORD n;
+	if (dados->tabImages[y][x].image != &dados->imagensP.beginH && 
+		dados->tabImages[y][x].image != &dados->imagensP.beginU && 
+		dados->tabImages[y][x].image != &dados->imagensP.end && 
+		dados->tabImages[y][x].image != &dados->imagensP.barrier) {
 		dados->tabImages[y][x].image = &dados->imagensP.blank;
-	}
+		dados->player.peca.desiredPiece = '.';
 	
+
+	dados->player.peca.x = x;
+	dados->player.peca.y = y;
+	
+	if (!WriteFile(dados->hPipe, dados, sizeof(Pipe), &n, NULL)) {
+		return -1;
+	}
+	}
 }
 
 void init(Pipe* dados) {

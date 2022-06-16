@@ -80,7 +80,7 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
 
     sinc->timerStartEvent = CreateEvent(NULL,
         TRUE,
-        TRUE,
+        FALSE,
         TIMER_START_EVENT);
 
     sinc->printBoard= CreateEvent(NULL,
