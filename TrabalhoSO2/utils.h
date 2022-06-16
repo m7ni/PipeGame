@@ -12,6 +12,6 @@
 LARGE_INTEGER intToLargeInt(int i);
 void setupBoard(MemDados* aux, DWORD actualSize, DWORD np);
 DWORD insertWater(PLAYER* pData);
-DWORD placePeca(Board* b, MemDados* aux, char peca, int posX, int posY, int player);
+DWORD placePeca(PLAYER* b, char peca, int posX, int posY);
 void printBoard(Board* aux);
 DWORD putWall(Board* b, MemDados* aux, DWORD posX, DWORD posY);

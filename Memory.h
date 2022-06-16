@@ -34,7 +34,7 @@
 #define EVENT_END TEXT("EVENT_END")
 
 #define EVENT_READ_ONE TEXT("EVENT_READ_ONE")
-#define EVENT_READ_TWO TEXT("EVENT_READ_ONE")
+
 
 typedef struct {
 	unsigned int code; //Passar comandos MONITOR -> SERVIDOR
@@ -52,7 +52,7 @@ typedef struct {   //comunicar pelo pipe
 	Images imagensP;
 	HANDLE read;
 	HANDLE hPipe;
-	
+
 	int current_image;
 	TCHAR current_pipe;
 	HDC *memDC;
@@ -61,8 +61,32 @@ typedef struct {   //comunicar pelo pipe
 	HWND hWnd;
 	BITMAP bmp;
 
+	HANDLE eventRead;
 	unsigned int ft;
 } Pipe;
+
+
+typedef struct {   //comunicar pelo pipe
+	unsigned int nPlayer;
+	unsigned int solo;
+	PLAYER player;
+
+	TabImagens tabImages[20][20];
+	Images imagensP;
+	HANDLE read;
+	HANDLE hPipe;
+
+	int current_image;
+	TCHAR current_pipe;
+	HDC* memDC;
+	HDC bmpDC;
+	HANDLE mutexCliente;
+	HWND hWnd;
+	BITMAP bmp;
+
+	HANDLE eventRead;
+	unsigned int ft;
+} Cliente;
 
 typedef struct { 
 	Comand UserComands[TAM]; //Passar comandos MONITOR -> SERVIDOR

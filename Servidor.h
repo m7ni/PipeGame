@@ -16,14 +16,15 @@ typedef struct {
 	unsigned int begin[2];
 	unsigned int end[2];
 
-	unsigned int lastWaterXY[2];
-	char sentido; //←↑→↓
+	unsigned int currentWaterXY[2];
+	unsigned int previousWaterXY[2];
 	char lastInsert;
 
 	PLAY peca;
 	unsigned int win;
 	unsigned int lose;
 
+	char nome[254];
 
 }PLAYER;
 

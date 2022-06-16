@@ -72,7 +72,7 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
             TRUE,
             PAUSE_RESUME_EVENT);
 
-        if (sinc->timerStartEvent == NULL || sinc->pauseResumeEvent == NULL) {
+        if (sinc->pauseResumeEvent == NULL) {
             _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
             return FALSE;
         }
@@ -80,7 +80,7 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
 
     sinc->timerStartEvent = CreateEvent(NULL,
         TRUE,
-        FALSE,
+        TRUE,
         TIMER_START_EVENT);
 
     sinc->printBoard= CreateEvent(NULL,

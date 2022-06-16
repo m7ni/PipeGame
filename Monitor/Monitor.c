@@ -118,6 +118,13 @@ int _tmain(int argc, TCHAR* argv[]) {
 	THREADPRINT threadprint;
 	Sinc sinc;
 	DWORD continua = 1;
+
+#ifdef UNICODE
+	(void)_setmode(_fileno(stdin), _O_WTEXT);
+	(void)_setmode(_fileno(stdout), _O_WTEXT);
+	(void)_setmode(_fileno(stderr), _O_WTEXT);
+#endif
+
 	if (!abreFileMap(&memDados))
 	{
 		_ftprintf(stderr, TEXT("There is no Servidor open! Try later...\n"));
