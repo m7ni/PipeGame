@@ -41,6 +41,7 @@ typedef struct {
 	unsigned int time; 
 	unsigned int wallX;
 	unsigned int wallY;
+	unsigned int random;
 } Comand;
 
 typedef struct {   //comunicar pelo pipe
@@ -65,6 +66,7 @@ typedef struct {   //comunicar pelo pipe
 
 	HANDLE eventRead;
 	unsigned int ft;
+	DWORD randPecaflag;
 } Pipe;
 
 

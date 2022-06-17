@@ -540,7 +540,11 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 				SetEvent(data->sinc->printBoard);
 
 			break;
+		case 3:
+			//enviar para o cliente (ns bem como)
+			break;
 		}
+		
 	
 	}
 }
