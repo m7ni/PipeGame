@@ -7,19 +7,33 @@
 #include "../Memory.h";
 #define PIPE_NAME TEXT("\\\\.\\pipe\\teste")
 
-#define HORIZONTAL_PIPE TEXT("pipes/2.bmp")
-#define VERTICAL_PIPE TEXT("pipes/1.bmp")
-#define START_PIPE TEXT("pipes/begin.bmp")
-#define BLANK TEXT("pipes/0.bmp")
-#define END_PIPE TEXT("pipes/end.bmp")
-#define LEFT90 TEXT("pipes/4.bmp")
-#define RIGHT90 TEXT("pipes/3.bmp")
-#define RIGHT90_1 TEXT("pipes/6.bmp")
-#define LEFT90_1 TEXT("pipes/5.bmp")
-#define WATER TEXT("pipes/water.bmp")
-#define BARRIER TEXT("pipes/barrier.bmp")
-#define BEGINU TEXT("pipes/beginU.bmp")
-#define BEGINH TEXT("pipes/beginH.bmp")
+#define HORIZONTAL_PIPEZERO TEXT("pipes/2.bmp")
+#define VERTICAL_PIPEZERO TEXT("pipes/1.bmp")
+#define START_PIPEZERO TEXT("pipes/begin.bmp")
+#define BLANKZERO TEXT("pipes/0.bmp")
+#define END_PIPEZERO TEXT("pipes/end.bmp")
+#define LEFT90ZERO TEXT("pipes/4.bmp")
+#define RIGHT90ZERO TEXT("pipes/3.bmp")
+#define RIGHT90_1ZERO TEXT("pipes/6.bmp")
+#define LEFT90_1ZERO TEXT("pipes/5.bmp")
+#define WATERZERO TEXT("pipes/water.bmp")
+#define BARRIERZERO TEXT("pipes/barrier.bmp")
+#define BEGINUZERO TEXT("pipes/beginU.bmp")
+#define BEGINHZERO TEXT("pipes/beginH.bmp")
+
+#define HORIZONTAL_PIPEONE TEXT("pipes1/2.bmp")
+#define VERTICAL_PIPEONE TEXT("pipes1/1.bmp")
+#define START_PIPEONE TEXT("pipes1/begin.bmp")
+#define BLANKONE TEXT("pipes1/0.bmp")
+#define END_PIPEONE TEXT("pipes1/end.bmp")
+#define LEFT90ONE TEXT("pipes1/4.bmp")
+#define RIGHT90ONE TEXT("pipes1/3.bmp")
+#define RIGHT90_1ONE TEXT("pipes1/6.bmp")
+#define LEFT90_1ONE TEXT("pipes1/5.bmp")
+#define WATERONE TEXT("pipes1/water.bmp")
+#define BARRIERONE TEXT("pipes1/barrier.bmp")
+#define BEGINUONE TEXT("pipes1/beginU.bmp")
+#define BEGINHONE TEXT("pipes1/beginH.bmp")
 
 LRESULT CALLBACK TrataEventos(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI printTabuleiro(LPVOID lparam);
@@ -76,19 +90,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	  // 4. Mostrar a janela
 	  // ============================================================================
 	
-	hWnd2 =  CreateWindow(
-		TEXT("SO2 - Client"),	// Nome da janela (programa) definido acima
-		TEXT("SO2 - Client"),// Texto que figura na barra do t tulo
-		WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU,	// Estilo da janela (WS_OVERLAPPED= normal)
-		CW_USEDEFAULT,		// Posi  o x pixels (default=  direita da  ltima)
-		CW_USEDEFAULT,		// Posi  o y pixels (default=abaixo da  ltima)
-		500,		// Largura da janela (em pixels)
-		500,		// Altura da janela (em pixels)
-		(HWND)HWND_DESKTOP,	// handle da janela pai (se se criar uma a partir de
-		(HMENU)NULL,			// handle do menu da janela (se tiver menu)
-		(HINSTANCE)hInst,		// handle da inst ncia do programa actual ("hInst"   
-		// passado num dos par metros de WinMain()
-		0);
+
 
 
 	if (!WaitNamedPipe(PIPE_NAME, 5000)) {
@@ -121,21 +123,37 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
 		ReadFile(hPipe, &dados, sizeof(Pipe), &n, NULL);
 
-		loadImages(&dados.imagensP.horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPE);
-		loadImages(&dados.imagensP.start, hWnd, (TCHAR*)START_PIPE);
-		loadImages(&dados.imagensP.end, hWnd, (TCHAR*)END_PIPE);
-		loadImages(&dados.imagensP.vertical, hWnd, (TCHAR*)VERTICAL_PIPE);
-		loadImages(&dados.imagensP.Right90, hWnd, (TCHAR*)RIGHT90);
-		loadImages(&dados.imagensP.Left90, hWnd, (TCHAR*)LEFT90);
-		loadImages(&dados.imagensP.Left_1_90, hWnd, (TCHAR*)LEFT90_1);
-		loadImages(&dados.imagensP.Right_1_90, hWnd, (TCHAR*)RIGHT90_1);
-		loadImages(&dados.imagensP.blank, hWnd, (TCHAR*)BLANK);
-		loadImages(&dados.imagensP.water, hWnd, (TCHAR*)WATER);
-		loadImages(&dados.imagensP.barrier, hWnd, (TCHAR*)BARRIER);
-		loadImages(&dados.imagensP.beginU, hWnd, (TCHAR*)BEGINU);
-		loadImages(&dados.imagensP.beginH, hWnd, (TCHAR*)BEGINH);
+		loadImages(&dados.imagensP[0].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
+		loadImages(&dados.imagensP[0].start, hWnd, (TCHAR*)START_PIPEZERO);
+		loadImages(&dados.imagensP[0].end, hWnd, (TCHAR*)END_PIPEZERO);
+		loadImages(&dados.imagensP[0].vertical, hWnd, (TCHAR*)VERTICAL_PIPEZERO);
+		loadImages(&dados.imagensP[0].Right90, hWnd, (TCHAR*)RIGHT90ZERO);
+		loadImages(&dados.imagensP[0].Left90, hWnd, (TCHAR*)LEFT90ZERO);
+		loadImages(&dados.imagensP[0].Left_1_90, hWnd, (TCHAR*)LEFT90_1ZERO);
+		loadImages(&dados.imagensP[0].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ZERO);
+		loadImages(&dados.imagensP[0].blank, hWnd, (TCHAR*)BLANKZERO);
+		loadImages(&dados.imagensP[0].water, hWnd, (TCHAR*)WATERZERO);
+		loadImages(&dados.imagensP[0].barrier, hWnd, (TCHAR*)BARRIERZERO);
+		loadImages(&dados.imagensP[0].beginU, hWnd, (TCHAR*)BEGINUZERO);
+		loadImages(&dados.imagensP[0].beginH, hWnd, (TCHAR*)BEGINHZERO);
+
+		loadImages(&dados.imagensP[1].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEONE);
+		loadImages(&dados.imagensP[1].start, hWnd, (TCHAR*)START_PIPEONE);
+		loadImages(&dados.imagensP[1].end, hWnd, (TCHAR*)END_PIPEONE);
+		loadImages(&dados.imagensP[1].vertical, hWnd, (TCHAR*)VERTICAL_PIPEONE);
+		loadImages(&dados.imagensP[1].Right90, hWnd, (TCHAR*)RIGHT90ONE);
+		loadImages(&dados.imagensP[1].Left90, hWnd, (TCHAR*)LEFT90ONE);
+		loadImages(&dados.imagensP[1].Left_1_90, hWnd, (TCHAR*)LEFT90_1ONE);
+		loadImages(&dados.imagensP[1].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ONE);
+		loadImages(&dados.imagensP[1].blank, hWnd, (TCHAR*)BLANKONE);
+		loadImages(&dados.imagensP[1].water, hWnd, (TCHAR*)WATERONE);
+		loadImages(&dados.imagensP[1].barrier, hWnd, (TCHAR*)BARRIERONE);
+		loadImages(&dados.imagensP[1].beginU, hWnd, (TCHAR*)BEGINUONE);
+		loadImages(&dados.imagensP[1].beginH, hWnd, (TCHAR*)BEGINHONE);
 
 
+
+	dados.currentSet = 0;
 	dados.hPipe = hPipe;
 	dados.mutexCliente = CreateMutex(NULL, FALSE, NULL);
 	dados.eventRead = CreateEvent(NULL,
@@ -145,8 +163,14 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	dados.hWnd = hWnd;
 	dados.memDC = &memDC;
 	dados.ft = 1;
+	if (MessageBox(hWnd, TEXT("O set de pipes atualmente escolhido é o 1, deseja trocar para o segundo ?"),
+		TEXT("PIPE SET"), MB_ICONEXCLAMATION | MB_YESNO) == IDYES)
+	{
+		dados.currentSet = 1;
+	}
 	init(&dados);
 	swapImages(&dados);
+	
 
 	if (CreateThread(NULL, 0, printTabuleiro, &dados, 0, NULL) == NULL)
 	{
@@ -155,14 +179,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
 
 	SetWindowLongPtr(hWnd, 0, (LONG_PTR)&dados);
-	SetWindowLongPtr(hWnd2, 0, (LONG_PTR)&dados);
 
 	ShowWindow(hWnd, nCmdShow);				
 	UpdateWindow(hWnd);	
 
-	ShowWindow(hWnd2, nCmdShow);
-	UpdateWindow(hWnd2);
-	
 	while (GetMessage(&lpMsg, NULL, 0, 0)) {
 		TranslateMessage(&lpMsg);	// Pré-processamento da mensagem (p.e. obter código 
 					   // ASCII da tecla premida)
@@ -192,10 +212,10 @@ DWORD WINAPI printTabuleiro(LPVOID lparam)
 	RECT rect;
 	int sentido = 1;
 	DWORD ret,n;
+
 	
 	while (1)
 	{
-
 		WaitForSingleObject(dados->mutexCliente, INFINITE);
 		//WaitForSingleObject(dados->eventRead, INFINITE);
 		ret = ReadFile(dados->hPipe, &dados, sizeof(Pipe), &n, NULL);
@@ -224,10 +244,9 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	switch (messg) {
 	case WM_CREATE:
 		//GetClientRect(hWnd, &rect);
-		button = CreateWindow(TEXT("button"), TEXT("player name"), WS_VISIBLE | WS_CHILD,
-			0, 150, 255, 50, hWnd, (HMENU)103, NULL, NULL);
+		
 		break;
-
+	
 	case WM_PAINT:
 		dados = (Pipe*)GetWindowLongPtr(hWnd, 0);
 
@@ -291,7 +310,8 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 return(DefWindowProc(hWnd, messg, wParam, lParam));
 break;  
 	}
-	return(0); }
+	return(0); 
+}
 
 
 	void swapImages(Pipe* dados) {
@@ -300,46 +320,46 @@ break;
 			for (DWORD y = 0; y < dados->player.actualSize; y++) {
 				if (dados->player.board[x][y] == '.')
 				{
-					dados->tabImages[x][y].image = &dados->imagensP.blank;
+					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].blank;
 				}
 				else if (dados->player.board[x][y] == 'w')
 				{
-					dados->tabImages[x][y].image = &dados->imagensP.barrier;
+					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].barrier;
 				}
 				else if (dados->player.board[x][y] == 'z') {
 					if (dados->ft == 1) {
-						dados->tabImages[x][y].image = &dados->imagensP.beginH;
+						dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].beginH;
 					}
 					else {
-						dados->tabImages[x][y].image = &dados->imagensP.horizontal;
+						dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].horizontal;
 					}
 
 				}
 				else if (dados->player.board[x][y] == 'x') {
 					if (dados->ft == 1) {
-						dados->tabImages[x][y].image = &dados->imagensP.beginU;
+						dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].beginU;
 					}
 					else {
-						dados->tabImages[x][y].image = &dados->imagensP.vertical;
+						dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].vertical;
 					}
 				}
 				else if (dados->player.board[x][y] == 's') {
-					dados->tabImages[x][y].image = &dados->imagensP.Right90;
+					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Right90;
 				}
 				else if (dados->player.board[x][y] == 'r') {
-					dados->tabImages[x][y].image = &dados->imagensP.Left_1_90;
+					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Left_1_90;
 				}
 				else if (dados->player.board[x][y] == 'd') {
-					dados->tabImages[x][y].image = &dados->imagensP.Left90;
+					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Left90;
 				}
 				else if (dados->player.board[x][y] == 'l') {
-					dados->tabImages[x][y].image = &dados->imagensP.Right_1_90;
+					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Right_1_90;
 				}
 				else if (dados->player.board[x][y] == 'a') {
-					dados->tabImages[x][y].image = &dados->imagensP.water;
+					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].water;
 				}
 				else if (dados->player.board[x][y] == 'e') {
-					dados->tabImages[x][y].image = &dados->imagensP.end;
+					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].end;
 				}
 			}
 		}
@@ -352,42 +372,42 @@ break;
 		TCHAR buf[256], value = NULL;
 		DWORD n;
 
-		if (dados->tabImages[y][x].image != &dados->imagensP.beginH &&
-			dados->tabImages[y][x].image != &dados->imagensP.beginU &&
-			dados->tabImages[y][x].image != &dados->imagensP.end &&
-			dados->tabImages[y][x].image != &dados->imagensP.barrier) {
+		if (dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].beginH &&
+			dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].beginU &&
+			dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].end &&
+			dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].barrier)  {
 
-			if (dados->tabImages[x][y].image == &dados->imagensP.blank)
+			if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].blank)
 			{
-				dados->tabImages[x][y].image = &dados->imagensP.horizontal;
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].horizontal;
 				dados->player.peca.desiredPiece = 'z';
 			}
-			else if (dados->tabImages[x][y].image == &dados->imagensP.horizontal)
+			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].horizontal)
 			{
-				dados->tabImages[x][y].image = &dados->imagensP.vertical;
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].vertical;
 				dados->player.peca.desiredPiece = 'x';
 			}
-			else if (dados->tabImages[x][y].image == &dados->imagensP.vertical) {
-				dados->tabImages[x][y].image = &dados->imagensP.Right90;
+			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].vertical) {
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Right90;
 				dados->player.peca.desiredPiece = 's';
 			}
-			else if (dados->tabImages[x][y].image == &dados->imagensP.Right90) {
-				dados->tabImages[x][y].image = &dados->imagensP.Left90;
+			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Right90) {
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Left90;
 				dados->player.peca.desiredPiece = 'd';
 
 			}
-			else if (dados->tabImages[x][y].image == &dados->imagensP.Left90) {
-				dados->tabImages[x][y].image = &dados->imagensP.Left_1_90;
+			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Left90) {
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Left_1_90;
 				dados->player.peca.desiredPiece = 'r';
 
 			}
-			else if (dados->tabImages[x][y].image == &dados->imagensP.Left_1_90) {
-				dados->tabImages[x][y].image = &dados->imagensP.Right_1_90;
+			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Left_1_90) {
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Right_1_90;
 				dados->player.peca.desiredPiece = 'l';
 
 			}
-			else if (dados->tabImages[x][y].image == &dados->imagensP.Right_1_90) {
-				dados->tabImages[x][y].image = &dados->imagensP.horizontal;
+			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Right_1_90) {
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].horizontal;
 				dados->player.peca.desiredPiece = 'z';
 
 			}
@@ -404,11 +424,11 @@ break;
 
 void clear_cell(Pipe* dados, DWORD y, DWORD x) {
 	DWORD n;
-	if (dados->tabImages[y][x].image != &dados->imagensP.beginH && 
-		dados->tabImages[y][x].image != &dados->imagensP.beginU && 
-		dados->tabImages[y][x].image != &dados->imagensP.end && 
-		dados->tabImages[y][x].image != &dados->imagensP.barrier) {
-		dados->tabImages[y][x].image = &dados->imagensP.blank;
+	if (dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].beginH &&
+		dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].beginU &&
+		dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].end &&
+		dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].barrier) {
+		dados->tabImages[y][x].image = &dados->imagensP[dados->currentSet].blank;
 		dados->player.peca.desiredPiece = '.';
 	
 

@@ -240,8 +240,6 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	setupBoard(&KB.memDados, KB.registoDados.actualSize,TP.numPlayer); //dependendo de ser solo ou comp, vai criar um ou dois tabuleiros
 
-
-
 	
 	Board aux;
 	WaitForSingleObject(KB.memDados.mutexBoard, INFINITE);
@@ -305,25 +303,26 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 	_tprintf(TEXT("ThreadWaterRunning\n"));
 
 	
-	_tprintf(TEXT("ThreadWaterRunning - Enviei pela primeira vez as boards para os clientes \n"));
-	_ftprintf(stderr, TEXT("-----------> Water Running in %d seconds\n"), data->timeR);
+	
+
 
 	while (&data->continua) {
-
-
 		for (DWORD i = 0; i < data->numPlayer; ++i) {
 			WaitForSingleObject(data->hMutex, INFINITE);
 			if (data->hPipe->active) {
-				if (!WriteFile(data->hPipe[i].hInstance, data->playerServ[i]->pipeData, sizeof(Pipe), &n, &data->hPipe[i].overlap)) {
+				if (!WriteFile(data->hPipe[i].hInstance, data->playerServ[i]->pipeData, sizeof(Pipe), &n, &data->hPipe[i].overlap
+				)) {
 					_tprintf(TEXT("[ERRO] Escrever no pipe! Water Running 1 (WriteFile)\n"));
 					exit(-1);
 				}
 			}
 			ReleaseMutex(data->hMutex);
 		}
-
 		if (fl == 1) {
+			_tprintf(TEXT("ThreadWaterRunning - Enviei pela primeira vez as boards para os clientes \n"));
+			
 			WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
+			_ftprintf(stderr, TEXT("-----------> Water Running in %d seconds\n"), data->timeR);
 			Sleep(data->timeR * 1000);
 			fl = 0;
 		}
@@ -376,13 +375,14 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 		SetEvent(data->sinc->printBoard);
 		ResetEvent(data->sinc->printBoard);
 
+		/*
 		for (DWORD i = 0; i < data->numPlayer; i++) {
 			if (data->hPipe->active) {
 				SetEvent(data->playerServ[i]->pipeData->eventRead);
 			}
 		}
-		
-		
+		*/
+		/*
 		if (playerLost == 1 || playerLost ==0) {
 			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
 			data->memDados->VBoard->player[playerLost].lose = 1;
@@ -402,7 +402,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
 			return 1;
 		}
-		
+		*/
 	}
 	for (DWORD i = 0; i < data->numPlayer; i++)
 		SetEvent(data->hEvents[i]);

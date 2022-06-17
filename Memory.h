@@ -49,7 +49,9 @@ typedef struct {   //comunicar pelo pipe
 	PLAYER player;
 	
 	TabImagens tabImages[20][20];
-	Images imagensP;
+	Images imagensP[2];
+	DWORD currentSet;
+
 	HANDLE read;
 	HANDLE hPipe;
 
@@ -74,7 +76,7 @@ typedef struct {   //comunicar pelo pipe
 	TabImagens tabImages[20][20];
 	Images imagensP;
 	HANDLE read;
-	HANDLE hPipe;
+	HANDLE* hPipe;
 
 	int current_image;
 	TCHAR current_pipe;

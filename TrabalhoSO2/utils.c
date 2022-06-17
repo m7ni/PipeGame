@@ -178,7 +178,7 @@ BOOL top(PLAYER* pData) {
 
 	if (new_pos_y == pData->previousWaterXY[1] &&
 		pData->currentWaterXY[0] == pData->previousWaterXY[0]) {
-		return FALSE;///////////////
+		return FALSE;
 	}
 
 	if (pData->board[new_pos_y][pData->currentWaterXY[1]] == 'x' ||
