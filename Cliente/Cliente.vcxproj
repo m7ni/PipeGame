@@ -153,6 +153,7 @@
     <ResourceCompile Include="Cliente.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Cliente.ico" />
     <Image Include="small.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -54,8 +54,6 @@ typedef struct {
 	THREADGAME* playerServ[2];
 }THREADPIPE, * PTHREADPIPE;
 
-
-
 typedef struct {
 	DWORD numPlayer;
 
@@ -142,8 +140,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 		return -1;
 
 
-	/*if (!criaSincClient(&pipeData)) // Criar Sinc Pipe
-		return -1;*/
+	
 
 	_ftprintf(stderr, TEXT("\n---Servidor Opened---\n\nWaiting for Players...\n\n"));
 
@@ -169,6 +166,10 @@ int _tmain(int argc, TCHAR* argv[]) {
 	TG1.memDados = &KB.memDados;
 	TG2.memDados = &KB.memDados;
 	TP.memDados = &KB.memDados;
+
+
+	if (!criaSincClient(&TP.pipeDataInitial)) // Criar Sinc Pipe
+		return -1;
 
 	// Thread responsible for the keyboard
 	
@@ -199,7 +200,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 			_tprintf(_T("[ERROR] Creating Event! (CreateEvent)"));
 			exit(-1);
 		}
-		hPipe = CreateNamedPipe(PIPE_NAME, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_WAIT | PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, MAX_PLAYERS, 256 * sizeof(TCHAR), 256 * sizeof(TCHAR), 1000, NULL);
+		hPipe = CreateNamedPipe(PIPE_NAME, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_WAIT | PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, MAX_PLAYERS, sizeof(Pipe), sizeof(Pipe), 1000, NULL);
 		if (hPipe == INVALID_HANDLE_VALUE) {
 			_tprintf(_T("[ERROR] Creating Named Pipe! (CreateNamedPipe)"));
 			exit(-1);
@@ -216,17 +217,13 @@ int _tmain(int argc, TCHAR* argv[]) {
 		}
 		//esperar que os jogadores cheguem
 	}
-	pipeData1.eventRead = CreateEvent(NULL,
-		TRUE,
-		FALSE,
-		EVENT_READ_ONE);
 
-	pipeData2.eventRead = &pipeData1.eventRead;
 
 	TG1.pipeData = &pipeData1;
 	TG2.pipeData = &pipeData2;
 	TP.playerServ[0] = &TG1;
 	TP.playerServ[1] = &TG2;
+
 	//abrir thread para esperar que os jogadores entrem
 	if ((threadC = CreateThread(NULL, 0, ThreadConectClient, &TP, 0, NULL)) == NULL)
 	{
@@ -266,7 +263,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 		TG2.eventPipe = TP.hEvents[1];
 		TG2.mutexP = TP.hMutex;
 		TG2.pipeData->player = aux.player[1];
-		TG1.id = 1;
+		TG2.id = 1;
 		aux.player[1].actualSize = aux.actualSize;
 		if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadInsertPipe, &TG2, 0, NULL)) == NULL)
 		{
@@ -274,6 +271,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 			return -1;
 		}
 	}
+
+
 	
 	//Thread responsible for the Water
 	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &TP, 0, NULL)) == NULL)
@@ -281,7 +280,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Water\n"));
 		return -1;
 	}
-
+	
 
 
 	WaitForMultipleObjects(contThread, hthread, TRUE, INFINITE);
@@ -291,6 +290,9 @@ int _tmain(int argc, TCHAR* argv[]) {
 	CloseHandleMem(&KB.memDados);
 	CloseSinc(&sinc);
 	CloseSem(&KB.memDados);
+	for (DWORD i = 0; i < 2; i++) {
+		CloseHandle(TP.hPipe[i].hInstance);
+	}
 }
 
 DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
@@ -299,25 +301,46 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 	data->memDados->flagMonitorComand = 0;
 	Board aux;
 	SetEvent(data->sinc->printBoard);
-	DWORD n, res, playerLost = 3, playerWon = 1;
+	DWORD n, res, playerLost = 3, playerWon = 3,ret;
+
 	_tprintf(TEXT("ThreadWaterRunning\n"));
 
-	
-	
-
-
 	while (&data->continua) {
+
+		if (playerLost == 1 || playerLost == 0) {
+			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
+			data->memDados->VBoard->player[playerLost].lose = 1;
+			ReleaseMutex(data->memDados->mutexBoard);
+			
+			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
+			return 1;
+		}
+
+		if (playerWon == 1 || playerWon == 0) {
+			_ftprintf(stderr, TEXT("\n\nYou Won\n"));
+			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
+			data->memDados->VBoard->player[playerWon].win = 1;
+			ReleaseMutex(data->memDados->mutexBoard);
+
+			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
+			return 1;
+		}
+
 		for (DWORD i = 0; i < data->numPlayer; ++i) {
 			WaitForSingleObject(data->hMutex, INFINITE);
 			if (data->hPipe->active) {
-				if (!WriteFile(data->hPipe[i].hInstance, data->playerServ[i]->pipeData, sizeof(Pipe), &n, &data->hPipe[i].overlap
-				)) {
-					_tprintf(TEXT("[ERRO] Escrever no pipe! Water Running 1 (WriteFile)\n"));
-					exit(-1);
+				ZeroMemory(&data->hPipe[i].overlap, sizeof(data->hPipe[i].overlap));
+				data->hPipe[i].overlap.hEvent = data->hEvents[i];
+				ret = WriteFile(data->hPipe[i].hInstance, data->playerServ[i]->pipeData, sizeof(Pipe), &n, &data->hPipe[i].overlap);
+				if (!ret && GetLastError() == ERROR_IO_PENDING) {
+					_tprintf(_T("Agendado envia\n"));
+					WaitForSingleObject(data->hPipe[i].overlap.hEvent, INFINITE);
 				}
 			}
 			ReleaseMutex(data->hMutex);
-		}
+		}	
+
+		
 		if (fl == 1) {
 			_tprintf(TEXT("ThreadWaterRunning - Enviei pela primeira vez as boards para os clientes \n"));
 			
@@ -329,8 +352,8 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 		
 
 		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
-
-		Sleep(3000);
+		WaitForSingleObject(data->pipeDataInitial->eventStopW, INFINITE);
+		Sleep(1000);
 
 		if (data->memDados->flagMonitorComand) { //Monitor Comand
 			_ftprintf(stderr, TEXT("-----------> Water Stoped for %d seconds\n"), data->memDados->timeMonitorComand);
@@ -356,17 +379,12 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 			}
 			ReleaseMutex(data->hMutex);
 		}
-
-		_tprintf(TEXT("passei pelo update\n"));
-
 				
 		for (DWORD i = 0; i < data->numPlayer; ++i) {
 			if (data->hPipe->active) {
 				data->playerServ[i]->pipeData->player = aux.player[i];
 			}
 		}
-				
-		_tprintf(TEXT("vou meter na memoria\n"));
 
 		WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
 		CopyMemory(data->memDados->VBoard, &aux, sizeof(Board));
@@ -375,37 +393,12 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 		SetEvent(data->sinc->printBoard);
 		ResetEvent(data->sinc->printBoard);
 
-		/*
-		for (DWORD i = 0; i < data->numPlayer; i++) {
-			if (data->hPipe->active) {
-				SetEvent(data->playerServ[i]->pipeData->eventRead);
-			}
-		}
-		*/
-		/*
-		if (playerLost == 1 || playerLost ==0) {
-			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
-			data->memDados->VBoard->player[playerLost].lose = 1;
-			ReleaseMutex(data->memDados->mutexBoard);
-			_ftprintf(stderr, TEXT("\n\nYou Lost\n"));
-			*data->continua = 0;
-			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
-			return 1;
-		}
-
-		if (playerWon == 1 || playerWon == 0) {
-			_ftprintf(stderr, TEXT("\n\nYou Won\n"));
-			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
-			data->memDados->VBoard->player[playerWon].win = 1;
-			ReleaseMutex(data->memDados->mutexBoard);
-			*data->continua = 0;
-			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
-			return 1;
-		}
-		*/
+	
+	
 	}
 	for (DWORD i = 0; i < data->numPlayer; i++)
 		SetEvent(data->hEvents[i]);
+	_tprintf(TEXT("sai thread água]\n"));
 	return 0;
 }
 
@@ -414,19 +407,31 @@ DWORD WINAPI ThreadInsertPipe(LPVOID param) { //uma thread destas para cada Play
 	DWORD n,ret;
 	Board aux;
 	_tprintf(TEXT("inicio thread InsertPipe Player[%d]\n"),data->id);
+	OVERLAPPED ov;
+	HANDLE eventOp = CreateEvent(NULL,
+		TRUE,
+		FALSE,
+		NULL);
+
 	while (&data->continua) {
-		ret = ReadFile(data->hPipe.hInstance, data->pipeData, sizeof(Pipe), &n, NULL);
-		if (ret != 0) {
+		
+		ZeroMemory(&data->hPipe.overlap, sizeof(data->hPipe.overlap));
+		data->hPipe.overlap.hEvent = data->eventPipe;
 
-			placePeca(data->memDados, data->pipeData->player.peca.desiredPiece, data->pipeData->player.peca.x, data->pipeData->player.peca.y,data->id);
+		ret = ReadFile(data->hPipe.hInstance, data->pipeData, sizeof(Pipe), &n, &data->hPipe.overlap);
+		if (ret) {
+			_tprintf(_T("recebi input\n"));
+		}
+		if (!ret && GetLastError() == ERROR_IO_PENDING) {
+			_tprintf(_T("Agendado insert\n"));
+			WaitForSingleObject(data->hPipe.overlap.hEvent, INFINITE);
 
 		}
-		else {
-			_tprintf(TEXT("[ERRO] LER no pipe! (InsertPipe) (WriteFile)\n"));
-			exit(-1);
-		}
+		placePeca(data->memDados, data->pipeData->player.peca.desiredPiece, data->pipeData->player.peca.x, data->pipeData->player.peca.y, data->id);
+
 		
 	}
+	_tprintf(TEXT("fim thread InsertPipe Player[%d]\n"), data->id);
 }
 
 

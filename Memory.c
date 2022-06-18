@@ -93,6 +93,12 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
         FALSE,
         EVENT_END);
 
+    sinc->endMonitor = CreateEvent(NULL,
+        FALSE,
+        FALSE,
+        EVENT_END);
+
+
     if (sinc->printBoard == NULL   ) {
         _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
         return FALSE;
@@ -101,11 +107,12 @@ BOOL criaSincGeral(Sinc* sinc, DWORD origin ) {
 }
 
 BOOL criaSincClient(Pipe * dados) {
-    dados->read = CreateEvent(NULL,
+    dados->eventStopW = CreateEvent(NULL,
         TRUE,
-        FALSE,
-        EVENT_READ_ONE);
-    if (dados->read == NULL) {
+        TRUE,
+        EVENT_PAUSEC);
+
+    if (dados->eventStopW == NULL) {
         _ftprintf(stderr, TEXT("Erro na criação dos mecanismos de sincronização.\n"));
         return FALSE;
     }

@@ -77,7 +77,7 @@ DWORD WINAPI ThreadPrintBoard(LPVOID param) {
 		CopyMemory(&aux, data->memDados->VBoard, sizeof(Board));
 		ReleaseMutex(data->memDados->mutexBoard);
 
-		printBoard(&aux, aux.numP); //enviamos o numero de jogadores e ele imprime, um ou dois tabuleiros
+	//	printBoard(&aux, aux.numP); //enviamos o numero de jogadores e ele imprime, um ou dois tabuleiros
 		Sleep(2000);
 
 		/*

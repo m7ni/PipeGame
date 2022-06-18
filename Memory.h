@@ -33,7 +33,7 @@
 #define EVENT_BOARD TEXT("EVENT_BOARD")
 #define EVENT_END TEXT("EVENT_END")
 
-#define EVENT_READ_ONE TEXT("EVENT_READ_ONE")
+#define EVENT_PAUSEC TEXT("EVENT_PAUSEC")
 
 
 typedef struct {
@@ -52,7 +52,7 @@ typedef struct {   //comunicar pelo pipe
 	Images imagensP[2];
 	DWORD currentSet;
 
-	HANDLE read;
+	HANDLE eventStopW;
 	HANDLE hPipe;
 
 	int current_image;
@@ -63,7 +63,9 @@ typedef struct {   //comunicar pelo pipe
 	HWND hWnd;
 	BITMAP bmp;
 
-	HANDLE eventRead;
+	vect2 selected_cell;
+	DWORD hover;
+	TCHAR nome[256];
 	unsigned int ft;
 } Pipe;
 

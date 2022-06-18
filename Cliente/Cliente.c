@@ -14,12 +14,14 @@
 #define END_PIPEZERO TEXT("pipes/end.bmp")
 #define LEFT90ZERO TEXT("pipes/4.bmp")
 #define RIGHT90ZERO TEXT("pipes/3.bmp")
-#define RIGHT90_1ZERO TEXT("pipes/6.bmp")
-#define LEFT90_1ZERO TEXT("pipes/5.bmp")
+#define RIGHT90_1ZERO TEXT("pipes/5.bmp")
+#define LEFT90_1ZERO TEXT("pipes/6.bmp")
 #define WATERZERO TEXT("pipes/water.bmp")
 #define BARRIERZERO TEXT("pipes/barrier.bmp")
 #define BEGINUZERO TEXT("pipes/beginU.bmp")
 #define BEGINHZERO TEXT("pipes/beginH.bmp")
+#define WINZERO TEXT("pipes/lost.bmp")
+#define LOSTZERO TEXT("pipes/win.bmp")
 
 #define HORIZONTAL_PIPEONE TEXT("pipes1/2.bmp")
 #define VERTICAL_PIPEONE TEXT("pipes1/1.bmp")
@@ -28,22 +30,26 @@
 #define END_PIPEONE TEXT("pipes1/end.bmp")
 #define LEFT90ONE TEXT("pipes1/4.bmp")
 #define RIGHT90ONE TEXT("pipes1/3.bmp")
-#define RIGHT90_1ONE TEXT("pipes1/6.bmp")
-#define LEFT90_1ONE TEXT("pipes1/5.bmp")
+#define RIGHT90_1ONE TEXT("pipes1/5.bmp")
+#define LEFT90_1ONE TEXT("pipes1/6.bmp")
 #define WATERONE TEXT("pipes1/water.bmp")
 #define BARRIERONE TEXT("pipes1/barrier.bmp")
 #define BEGINUONE TEXT("pipes1/beginU.bmp")
 #define BEGINHONE TEXT("pipes1/beginH.bmp")
+#define WINONE TEXT("pipes1/lost.bmp")
+#define LOSTONE TEXT("pipes1/win.bmp")
 
+void pause_water(Pipe* dados, vect2 selected);
+void unpause_water(Pipe* dados, vect2 selected);
 LRESULT CALLBACK TrataEventos(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI printTabuleiro(LPVOID lparam);
-HINSTANCE hInstance;
 void swapImages(Pipe* dados);
 TCHAR szProgName[] = TEXT("Base");
 void loadImages(Image* image, HWND hWnd, TCHAR* image_path);
 void init(Pipe* dados);
 void changePipe(Pipe* dados, DWORD x, DWORD y);
 void clear_cell(Pipe* dados, DWORD y, DWORD x);
+
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow) {
 	HWND hWnd, hWnd2;		// hWnd é o handler da janela, gerado mais abaixo por CreateWindow()
@@ -52,9 +58,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	HANDLE hThread;
 	HANDLE hPipe;
 	Pipe dados;
-	DWORD ret,n;
+	DWORD ret,n,dwMode;
 	HDC memDC = NULL;
-
+	BOOL fSuccess;
 
 	wcApp.cbSize = sizeof(WNDCLASSEX);      
 	wcApp.hInstance = hInst;		       						  					
@@ -64,7 +70,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	wcApp.hIcon = LoadIcon(NULL, IDI_APPLICATION);   // "hIcon" = handler do ícon normal
 	wcApp.hIconSm = LoadIcon(NULL, IDI_INFORMATION); // "hIconSm" = handler do ícon pequeno
 	wcApp.hCursor = LoadCursor(NULL, IDC_ARROW);	// "hCursor" = handler do cursor (rato) 
-	wcApp.lpszMenuName = NULL;			// Classe do menu que a janela pode ter
+	wcApp.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);		// Classe do menu que a janela pode ter
 	wcApp.cbClsExtra = 0;				// Livre, para uso particular
 	wcApp.cbWndExtra = 0;				// Livre, para uso particular
 	wcApp.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
@@ -93,16 +99,25 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
 
 
-	if (!WaitNamedPipe(PIPE_NAME, 5000)) {
+	if (!WaitNamedPipe(PIPE_NAME, 1000)) {
+		MessageBox(hWnd, TEXT("O servidor não está aberto/ o servido não aceita mais jogadores"), TEXT("Informação"), MB_ICONEXCLAMATION | MB_OK);
 		exit(-1);
 	}
 
 	hPipe = CreateFile(PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL, NULL);
+		FILE_FLAG_OVERLAPPED, NULL);
 	if (hPipe == NULL) {
 		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (CreateFile)\n"), PIPE_NAME);
 		exit(-1);
 	}
+
+	dwMode = PIPE_READMODE_MESSAGE;
+	fSuccess = SetNamedPipeHandleState(
+		hPipe, // handle para o pipe
+		&dwMode, // novo pipe mode
+		NULL, // maximum bytes = NULL (não altera)
+		NULL);
+
 	ret = ReadFile(hPipe, &dados, sizeof(Pipe), &n, NULL);
 	
 	if (dados.nPlayer == 1) {
@@ -136,6 +151,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		loadImages(&dados.imagensP[0].barrier, hWnd, (TCHAR*)BARRIERZERO);
 		loadImages(&dados.imagensP[0].beginU, hWnd, (TCHAR*)BEGINUZERO);
 		loadImages(&dados.imagensP[0].beginH, hWnd, (TCHAR*)BEGINHZERO);
+		loadImages(&dados.imagensP[0].beginU, hWnd, (TCHAR*)BEGINUZERO);
+		loadImages(&dados.imagensP[0].beginH, hWnd, (TCHAR*)BEGINHZERO);
+		loadImages(&dados.imagensP[0].win, hWnd, (TCHAR*)WINZERO);
+		loadImages(&dados.imagensP[0].lost, hWnd, (TCHAR*)LOSTZERO);
 
 		loadImages(&dados.imagensP[1].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEONE);
 		loadImages(&dados.imagensP[1].start, hWnd, (TCHAR*)START_PIPEONE);
@@ -150,24 +169,24 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		loadImages(&dados.imagensP[1].barrier, hWnd, (TCHAR*)BARRIERONE);
 		loadImages(&dados.imagensP[1].beginU, hWnd, (TCHAR*)BEGINUONE);
 		loadImages(&dados.imagensP[1].beginH, hWnd, (TCHAR*)BEGINHONE);
+		loadImages(&dados.imagensP[1].win, hWnd, (TCHAR*)WINONE);
+		loadImages(&dados.imagensP[1].lost, hWnd, (TCHAR*)LOSTONE);
 
 
-
+	
 	dados.currentSet = 0;
 	dados.hPipe = hPipe;
 	dados.mutexCliente = CreateMutex(NULL, FALSE, NULL);
-	dados.eventRead = CreateEvent(NULL,
-		TRUE,
-		FALSE,
-		EVENT_READ_ONE);
 	dados.hWnd = hWnd;
 	dados.memDC = &memDC;
 	dados.ft = 1;
+	dados.hover = 0;
 	if (MessageBox(hWnd, TEXT("O set de pipes atualmente escolhido é o 1, deseja trocar para o segundo ?"),
 		TEXT("PIPE SET"), MB_ICONEXCLAMATION | MB_YESNO) == IDYES)
 	{
 		dados.currentSet = 1;
 	}
+	criaSincClient(&dados);
 	init(&dados);
 	swapImages(&dados);
 	
@@ -212,20 +231,59 @@ DWORD WINAPI printTabuleiro(LPVOID lparam)
 	RECT rect;
 	int sentido = 1;
 	DWORD ret,n;
+	OVERLAPPED ov;
+	HANDLE eventOp = CreateEvent(NULL,
+		TRUE,
+		FALSE,
+		NULL);
 
-	
 	while (1)
 	{
-		WaitForSingleObject(dados->mutexCliente, INFINITE);
-		//WaitForSingleObject(dados->eventRead, INFINITE);
-		ret = ReadFile(dados->hPipe, &dados, sizeof(Pipe), &n, NULL);
-		if (ret != 0) {
-			swapImages(dados);
+		ZeroMemory(&ov, sizeof(ov));
+		ov.hEvent = eventOp;
 
-			InvalidateRect(dados->hWnd, NULL, TRUE);
+		WaitForSingleObject(dados->mutexCliente, INFINITE);
+		ret = ReadFile(dados->hPipe, dados, sizeof(Pipe), &n, &ov);
+		if (ret) {
+			
 		}
+		if (!ret && GetLastError() == ERROR_IO_PENDING) {
+
+			WaitForSingleObject(ov.hEvent, INFINITE);
+
+		}
+	
+		swapImages(dados);
+
+		InvalidateRect(dados->hWnd, NULL, TRUE);
 		ReleaseMutex(dados->mutexCliente);
 	}
+}
+
+INT_PTR CALLBACK DlgProc(HWND dlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+	Pipe* dados = (Pipe*)GetWindowLongPtr(GetParent(dlg), 0);
+
+	switch (msg) {
+	case WM_INITDIALOG:
+		SetDlgItemText(dlg, IDC_EDIT1, "");
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDOK:
+			GetDlgItemText(dlg, IDC_EDIT1, dados->nome, 80);
+		
+		case IDCANCEL:
+			EndDialog(dlg, IDCANCEL);
+			return TRUE;
+		default:
+			return TRUE;
+		}
+	
+	case WM_CLOSE:
+		EndDialog(dlg,(INT_PTR)0);
+		return TRUE;
+	}
+	return FALSE;
 }
 
 LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam) {
@@ -235,12 +293,13 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	RECT rect;
 	PAINTSTRUCT ps;
 	MINMAXINFO* mmi;
+	BOOL fMouseTracking = FALSE;
 	static BITMAP bmp;
 	static HDC bmpDC;
 	static int xBitmap;
 	static int yBitmap;
 	HWND button;
-
+	INT_PTR ret;
 	switch (messg) {
 	case WM_CREATE:
 		//GetClientRect(hWnd, &rect);
@@ -298,6 +357,72 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			}
 		}
 		break;
+	case WM_MOUSEMOVE:
+		dados = (Pipe*)GetWindowLongPtr(hWnd, 0);
+		pos.x = GET_X_LPARAM(lParam);
+		pos.y = GET_Y_LPARAM(lParam);
+
+		for (DWORD y = 0; y < dados->player.actualSize; y++) {
+			for (DWORD x = 0; x < dados->player.actualSize; x++) {
+				if (!fMouseTracking && pos.x > dados->tabImages[y][x].coord.x && pos.x < dados->tabImages[y][x].coord.x + dados->tabImages[y][x].image->bitmap.bmWidth
+					&&
+					pos.y > dados->tabImages[y][x].coord.y && pos.y < dados->tabImages[y][x].coord.y + dados->tabImages[y][x].image->bitmap.bmHeight)
+				{
+					dados->selected_cell.y = y;
+					dados->selected_cell.x = x;
+
+					TRACKMOUSEEVENT tme;
+
+					tme.cbSize = sizeof(TRACKMOUSEEVENT);
+					tme.dwFlags = TME_HOVER;
+					tme.hwndTrack = hWnd;
+					tme.dwHoverTime = 1 * 1E3;
+					fMouseTracking = TrackMouseEvent(&tme);
+				}
+			}
+		}
+		break;
+	case WM_MOUSEHOVER:
+		dados = (Pipe*)GetWindowLongPtr(hWnd, 0);
+
+		fMouseTracking = FALSE;
+		dados->hover++;
+		if (dados->hover <= 3) {
+			pause_water(dados, dados->selected_cell);
+		}
+		break;
+	case WM_MOUSELEAVE:
+		dados = (Pipe*)GetWindowLongPtr(hWnd, 0);
+		fMouseTracking = FALSE;
+		unpause_water(dados, dados->selected_cell);
+		break;
+	case WM_COMMAND:
+		dados = (Pipe*)GetWindowLongPtr(hWnd, 0);
+		switch (wParam) {
+		case ID_SETINGS_CHANGENAME:
+			 ret = DialogBox(NULL, MAKEINTRESOURCE(IDD_DIALOG1), hWnd, DlgProc);
+			if (ret == IDOK) {
+				MessageBoxEx(NULL, dados->nome, _T("Resultado"), MB_OK | MB_ICONINFORMATION | MB_TASKMODAL, 0);
+			}
+			break;
+		case ID_SETINGS_SHOWNAME:
+			MessageBoxEx(NULL, dados->nome, _T("INFORMAÇÂO"), MB_OK | MB_ICONINFORMATION | MB_TASKMODAL, 0);
+			break;
+		case ID_SETINGS_CHANGEBITSET:
+
+			if (dados->currentSet == 1)
+				dados->currentSet = 0;
+			else
+				dados->currentSet = 1;
+			swapImages(&dados);
+			InvalidateRect(dados->hWnd, NULL, TRUE);
+			break;
+		case ID_SETINGS_EXIT:
+			PostQuitMessage(0);
+			break;
+		}
+		
+		break;
 	case WM_CLOSE:
 			//fazer os closes
 			DestroyWindow(hWnd);
@@ -314,10 +439,11 @@ break;
 }
 
 
-	void swapImages(Pipe* dados) {
-		
-		for (DWORD x = 0; x < dados->player.actualSize; x++) {
-			for (DWORD y = 0; y < dados->player.actualSize; y++) {
+void swapImages(Pipe* dados) {
+
+	for (DWORD x = 0; x < dados->player.actualSize; x++) {
+		for (DWORD y = 0; y < dados->player.actualSize; y++) {
+			if (!dados->player.lose || !dados->player.win) {
 				if (dados->player.board[x][y] == '.')
 				{
 					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].blank;
@@ -362,84 +488,119 @@ break;
 					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].end;
 				}
 			}
-		}
+			else if (dados->player.lose) {
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].lost;
 
-		dados->ft = 0;
+			}
+			else if (dados->player.win) {
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].win;
+			}
+		}
+	}
+
+	dados->ft = 0;
 	
-	}
+}
 
-	void changePipe(Pipe* dados, DWORD x, DWORD y) {
-		TCHAR buf[256], value = NULL;
-		DWORD n;
+void changePipe(Pipe* dados, DWORD x, DWORD y) {
+	TCHAR buf[256], value = NULL;
+	DWORD n,ret;
+	OVERLAPPED ov;
 
-		if (dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].beginH &&
-			dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].beginU &&
-			dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].end &&
-			dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].barrier)  {
+	HANDLE eventOp = CreateEvent(NULL,
+		TRUE,
+		FALSE,
+		NULL);
 
-			if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].blank)
-			{
-				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].horizontal;
-				dados->player.peca.desiredPiece = 'z';
-			}
-			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].horizontal)
-			{
-				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].vertical;
-				dados->player.peca.desiredPiece = 'x';
-			}
-			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].vertical) {
-				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Right90;
-				dados->player.peca.desiredPiece = 's';
-			}
-			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Right90) {
-				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Left90;
-				dados->player.peca.desiredPiece = 'd';
+	if (dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].beginH &&
+		dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].beginU &&
+		dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].end &&
+		dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].barrier)  {
 
-			}
-			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Left90) {
-				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Left_1_90;
-				dados->player.peca.desiredPiece = 'r';
-
-			}
-			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Left_1_90) {
-				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Right_1_90;
-				dados->player.peca.desiredPiece = 'l';
-
-			}
-			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Right_1_90) {
-				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].horizontal;
-				dados->player.peca.desiredPiece = 'z';
-
-			}
-
-			dados->player.peca.x = x;
-			dados->player.peca.y = y;
-
-
-			if (!WriteFile(dados->hPipe, dados, sizeof(Pipe), &n, NULL)) {
-				return -1;
-			}
+		if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].blank)
+		{
+			dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].horizontal;
+			dados->player.peca.desiredPiece = 'z';
 		}
+		else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].horizontal)
+		{
+			dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].vertical;
+			dados->player.peca.desiredPiece = 'x';
+		}
+		else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].vertical) {
+			dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Right90;
+			dados->player.peca.desiredPiece = 's';
+		}
+		else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Right90) {
+			dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Left90;
+			dados->player.peca.desiredPiece = 'd';
+
+		}
+		else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Left90) {
+			dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Left_1_90;
+			dados->player.peca.desiredPiece = 'r';
+
+		}
+		else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Left_1_90) {
+			dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Right_1_90;
+			dados->player.peca.desiredPiece = 'l';S
+
+		}
+		else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Right_1_90) {
+			dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].horizontal;
+			dados->player.peca.desiredPiece = 'z';
+
+		}
+
+		dados->player.peca.x = x;
+		dados->player.peca.y = y;
+		
+
+		ZeroMemory(&ov, sizeof(ov));
+		ov.hEvent = eventOp;
+
+		ret = WriteFile(dados->hPipe, dados, sizeof(Pipe), &n, &ov);
+
+			
+		if (!ret && GetLastError() == ERROR_IO_PENDING) {
+			WaitForSingleObject(ov.hEvent, INFINITE);
+		}
+			
 	}
+}
 
 void clear_cell(Pipe* dados, DWORD y, DWORD x) {
 	DWORD n;
 	if (dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].beginH &&
 		dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].beginU &&
 		dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].end &&
+		dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].water&&
 		dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].barrier) {
 		dados->tabImages[y][x].image = &dados->imagensP[dados->currentSet].blank;
 		dados->player.peca.desiredPiece = '.';
 	
 
-	dados->player.peca.x = x;
-	dados->player.peca.y = y;
+	dados->player.peca.x = y;
+	dados->player.peca.y = x;
 	
 	if (!WriteFile(dados->hPipe, dados, sizeof(Pipe), &n, NULL)) {
 		return -1;
 	}
 	}
 }
+
+void pause_water(Pipe* dados, vect2 selected) {
+	if (dados->tabImages[selected.x][selected.y].image == &dados->imagensP[dados->currentSet].water) {
+		ResetEvent(dados->eventStopW);
+	}
+}
+
+void unpause_water(Pipe* dados, vect2 selected) {
+
+
+	SetEvent(dados->eventStopW);
+}
+
 
 void init(Pipe* dados) {
 

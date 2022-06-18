@@ -18,6 +18,7 @@ void setupBoard(MemDados* aux, DWORD actualSize, DWORD np) {
 			}
 		}
 	}
+	aux->VBoard->numP = np;
 		DWORD lineBegin1 = rand() % aux->VBoard->actualSize;
 		DWORD lineEnd1 = rand() % aux->VBoard->actualSize;
 
@@ -176,8 +177,8 @@ BOOL top(PLAYER* pData) {
 		return FALSE;
 	}
 
-	if (new_pos_y == pData->previousWaterXY[1] &&
-		pData->currentWaterXY[0] == pData->previousWaterXY[0]) {
+	if (new_pos_y == pData->previousWaterXY[0] &&
+		pData->currentWaterXY[1] == pData->previousWaterXY[1]) {
 		return FALSE;
 	}
 
@@ -185,6 +186,8 @@ BOOL top(PLAYER* pData) {
 		pData->board[new_pos_y][pData->currentWaterXY[1]] == 's' ||
 		pData->board[new_pos_y][pData->currentWaterXY[1]] == 'd' ||
 		pData->board[new_pos_y][pData->currentWaterXY[1]] == TEXT('e')) {
+		pData->previousWaterXY[0] = pData->currentWaterXY[0];
+		pData->previousWaterXY[1] = pData->currentWaterXY[1];
 		pData->currentWaterXY[0] = new_pos_y;
 		return TRUE;
 	}
@@ -197,8 +200,8 @@ BOOL bottom(PLAYER* pData) {
 		return FALSE;
 	}
 
-	if (new_pos_y == pData->previousWaterXY[1] &&
-		pData->currentWaterXY[0] == pData->previousWaterXY[0]) {
+	if (new_pos_y == pData->previousWaterXY[0] &&
+		pData->currentWaterXY[1] == pData->previousWaterXY[1]) {
 		return FALSE;
 	}
 
@@ -206,29 +209,10 @@ BOOL bottom(PLAYER* pData) {
 		pData->board[new_pos_y][pData->currentWaterXY[1]] == 'l' ||
 		pData->board[new_pos_y][pData->currentWaterXY[1]] == 'r' ||
 		pData->board[new_pos_y][pData->currentWaterXY[1]] == TEXT('e')) {
+		pData->previousWaterXY[0] = pData->currentWaterXY[0];
+		pData->previousWaterXY[1] = pData->currentWaterXY[1];
 		pData->currentWaterXY[0] = new_pos_y;
-		return TRUE;
-	}
-	return FALSE;
-}
-
-BOOL right(PLAYER* pData) {
-	int new_pos_x = pData->currentWaterXY[1] + 1;
-
-	if (new_pos_x > pData->actualSize) {
-		return FALSE;
-	}
-
-	if (new_pos_x == pData->previousWaterXY[0] &&
-		pData->currentWaterXY[1] == pData->previousWaterXY[1]) {
-		return FALSE;
-	}
-
-	if (pData->board[pData->currentWaterXY[0]][new_pos_x] == 'z' ||
-		pData->board[pData->currentWaterXY[0]][new_pos_x] == 'l' ||
-		pData->board[pData->currentWaterXY[0]][new_pos_x] == 'd' ||
-		pData->board[pData->currentWaterXY[0]][new_pos_x] == TEXT('e')) {
-		pData->currentWaterXY[1] = new_pos_x;
+		
 		return TRUE;
 	}
 	return FALSE;
@@ -241,8 +225,8 @@ BOOL left(PLAYER* pData) {
 		return FALSE;
 	}
 
-	if (new_pos_x == pData->previousWaterXY[0] &&
-		pData->currentWaterXY[1] == pData->previousWaterXY[1]) {
+	if (new_pos_x == pData->previousWaterXY[1] &&
+		pData->currentWaterXY[0] == pData->previousWaterXY[0]) {
 		return FALSE;
 	}
 
@@ -250,12 +234,37 @@ BOOL left(PLAYER* pData) {
 		pData->board[pData->currentWaterXY[0]][new_pos_x] == 's' ||
 		pData->board[pData->currentWaterXY[0]][new_pos_x] == 'r' ||
 		pData->board[pData->currentWaterXY[0]][new_pos_x] == TEXT('e')) {
+		pData->previousWaterXY[0] = pData->currentWaterXY[0];
+		pData->previousWaterXY[1] = pData->currentWaterXY[1];
 		pData->currentWaterXY[1] = new_pos_x;
 		return TRUE;
 	}
 	return FALSE;
 }
 
+BOOL right(PLAYER* pData) {
+	int new_pos_x = pData->currentWaterXY[1] + 1;
+
+	if (new_pos_x > pData->actualSize) {
+		return FALSE;
+	}
+
+	if (new_pos_x == pData->previousWaterXY[1] &&
+		pData->currentWaterXY[0] == pData->previousWaterXY[0]) {
+		return FALSE;
+	}
+
+	if (pData->board[pData->currentWaterXY[0]][new_pos_x] == 'z' ||
+		pData->board[pData->currentWaterXY[0]][new_pos_x] == 'l' ||
+		pData->board[pData->currentWaterXY[0]][new_pos_x] == 'd' ||
+		pData->board[pData->currentWaterXY[0]][new_pos_x] == TEXT('e')) {
+		pData->previousWaterXY[0] = pData->currentWaterXY[0];
+		pData->previousWaterXY[1] = pData->currentWaterXY[1];
+		pData->currentWaterXY[1] = new_pos_x;
+		return TRUE;
+	}
+	return FALSE;
+}
 
 DWORD placePeca(MemDados* aux, char peca, int posX, int posY,int id) {
 
@@ -274,32 +283,32 @@ DWORD placePeca(MemDados* aux, char peca, int posX, int posY,int id) {
 }
 
 void printBoard(Board* aux) {
-	for (DWORD i = 0; i < aux->numP; i++) {
-		_tprintf(TEXT("--------PLAYER [i]---------"));
+	for (DWORD m = 0; m< aux->numP; m++) {
+		_tprintf(TEXT("--------PLAYER [%d]---------"),m);
 		for (DWORD i = 0; i < aux->actualSize; i++) {
 			_tprintf(TEXT("\n"));
 			for (DWORD j = 0; j < aux->actualSize; j++)
 			{
-				_tprintf(TEXT(" %c"), aux->player[i].board[i][j]);
+				_tprintf(TEXT(" %c"), aux->player[m].board[i][j]);
 			}
 		}
 		_tprintf(TEXT("\n"));
 	}
 }
 
-DWORD putWall(Board* b, MemDados* aux, DWORD posX, DWORD posY) {
+DWORD putWall( MemDados* aux, DWORD posX, DWORD posY) {
 
 	WaitForSingleObject(aux->mutexBoard, INFINITE);
-	for (DWORD i = 0; i < b->numP; i++) {
+	for (DWORD i = 0; i < aux->VBoard->numP; i++) {
 		if (posX > aux->VBoard->actualSize || posY > aux->VBoard->actualSize || posX < 0 || posY < 0 || aux->VBoard->player[i].board[posX][posY] != '.') {
-			ReleaseMutex(aux->mutexBoard);
+			
 			_ftprintf(stderr, TEXT("-----------> Cant place wall here: [%d][%d]\n"), posX, posY);
-			return -1;
 		}
 		else {
-			aux->VBoard->player[i].board[posX][posY] = 'W';
+			aux->VBoard->player[i].board[posX][posY] = 'w';
 			_ftprintf(stderr, TEXT("-----------> Placed wall at [%d][%d]\n"), posX, posY);
 		}
+	
 	}
 	ReleaseMutex(aux->mutexBoard);
 	return 1;

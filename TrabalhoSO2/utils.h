@@ -9,7 +9,6 @@
 #include <time.h>
 
 
-LARGE_INTEGER intToLargeInt(int i);
 void setupBoard(MemDados* aux, DWORD actualSize, DWORD np);
 DWORD insertWater(PLAYER* pData);
 DWORD placePeca(PLAYER* b, char peca, int posX, int posY);

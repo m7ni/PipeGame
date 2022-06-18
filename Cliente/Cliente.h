@@ -32,6 +32,8 @@ typedef struct {
 	Image water;
 	Image beginU;
 	Image beginH;
+	Image win;
+	Image lost;
 	HANDLE mutex;
 	Image barrier;
 }Images;
