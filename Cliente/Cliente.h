@@ -20,6 +20,7 @@ typedef struct {
 } Image;
 
 typedef struct {
+	Image imgArray[6];
 	Image horizontal;
 	Image vertical;
 	Image start;

@@ -22,6 +22,7 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 	//WaitForSingleObject(data->sinc->timerStartEvent, INFINITE);
 	Sleep(1000);
 	aux.code = 0;
+	aux.random = 0;
 	
 	while (*data->continua)
 	{
@@ -45,6 +46,13 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 			_tscanf_s(TEXT("%d"), &aux.wallX);
 			_ftprintf(stdout, TEXT("-----------> y: "));
 			_tscanf_s(TEXT("%d"), &aux.wallY);
+		}
+		else if (wcscmp(comand, TEXT("random")) == 0) {
+			aux.code = 3;
+			if (aux.random == 1)
+				aux.random = 0;
+			else
+				aux.random = 1;
 		}
 		if (aux.code != 0) {
 			WaitForSingleObject(data->memDados->semMonitor, INFINITE);

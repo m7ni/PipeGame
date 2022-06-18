@@ -52,9 +52,9 @@ void clear_cell(Pipe* dados, DWORD y, DWORD x);
 
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow) {
-	HWND hWnd, hWnd2;		// hWnd é o handler da janela, gerado mais abaixo por CreateWindow()
-	MSG lpMsg;		// MSG é uma estrutura definida no Windows para as mensagens
-	WNDCLASSEX wcApp;	// WNDCLASSEX é uma estrutura cujos membros servem para 
+	HWND hWnd, hWnd2;		// hWnd ï¿½ o handler da janela, gerado mais abaixo por CreateWindow()
+	MSG lpMsg;		// MSG ï¿½ uma estrutura definida no Windows para as mensagens
+	WNDCLASSEX wcApp;	// WNDCLASSEX ï¿½ uma estrutura cujos membros servem para 
 	HANDLE hThread;
 	HANDLE hPipe;
 	Pipe dados;
@@ -65,10 +65,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	wcApp.cbSize = sizeof(WNDCLASSEX);      
 	wcApp.hInstance = hInst;		       						  					
 	wcApp.lpszClassName = szProgName;       // Nome da janela (neste caso = nome do programa)
-	wcApp.lpfnWndProc = TrataEventos;       // Endereço da função de processamento da janela
+	wcApp.lpfnWndProc = TrataEventos;       // Endereï¿½o da funï¿½ï¿½o de processamento da janela
 	wcApp.style = CS_HREDRAW | CS_VREDRAW;  // Estilo da janela: Fazer o redraw se for
-	wcApp.hIcon = LoadIcon(NULL, IDI_APPLICATION);   // "hIcon" = handler do ícon normal
-	wcApp.hIconSm = LoadIcon(NULL, IDI_INFORMATION); // "hIconSm" = handler do ícon pequeno
+	wcApp.hIcon = LoadIcon(NULL, IDI_APPLICATION);   // "hIcon" = handler do ï¿½con normal
+	wcApp.hIconSm = LoadIcon(NULL, IDI_INFORMATION); // "hIconSm" = handler do ï¿½con pequeno
 	wcApp.hCursor = LoadCursor(NULL, IDC_ARROW);	// "hCursor" = handler do cursor (rato) 
 	wcApp.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);		// Classe do menu que a janela pode ter
 	wcApp.cbClsExtra = 0;				// Livre, para uso particular
@@ -82,16 +82,16 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	
 	hWnd = CreateWindow(
 		szProgName,			// Nome da janela (programa) definido acima
-		TEXT("PLAYER"),// Texto que figura na barra do título
+		TEXT("PLAYER"),// Texto que figura na barra do tï¿½tulo
 		WS_OVERLAPPEDWINDOW,	// Estilo da janela (WS_OVERLAPPED= normal)
-		400,		// Posição x pixels (default=à direita da última)
-		200,		// Posição y pixels (default=abaixo da última)
+		400,		// Posiï¿½ï¿½o x pixels (default=ï¿½ direita da ï¿½ltima)
+		200,		// Posiï¿½ï¿½o y pixels (default=abaixo da ï¿½ltima)
 		800,		// Largura da janela (em pixels)
 		500,		// Altura da janela (em pixels)
 		(HWND)HWND_DESKTOP,	// handle da janela pai (se se criar uma a partir de			
 		(HMENU)NULL,			// handle do menu da janela (se tiver menu)
-		(HINSTANCE)hInst,		// handle da instância do programa actual ("hInst" é 	
-		0);				// Não há parâmetros adicionais para a janela
+		(HINSTANCE)hInst,		// handle da instï¿½ncia do programa actual ("hInst" ï¿½ 	
+		0);				// Nï¿½o hï¿½ parï¿½metros adicionais para a janela
 	  // ============================================================================
 	  // 4. Mostrar a janela
 	  // ============================================================================
@@ -100,7 +100,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
 
 	if (!WaitNamedPipe(PIPE_NAME, 1000)) {
-		MessageBox(hWnd, TEXT("O servidor não está aberto/ o servido não aceita mais jogadores"), TEXT("Informação"), MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(hWnd, TEXT("O servidor nï¿½o estï¿½ aberto/ o servido nï¿½o aceita mais jogadores"), TEXT("Informaï¿½ï¿½o"), MB_ICONEXCLAMATION | MB_OK);
 		exit(-1);
 	}
 
@@ -115,14 +115,14 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	fSuccess = SetNamedPipeHandleState(
 		hPipe, // handle para o pipe
 		&dwMode, // novo pipe mode
-		NULL, // maximum bytes = NULL (não altera)
+		NULL, // maximum bytes = NULL (nï¿½o altera)
 		NULL);
 
 	ret = ReadFile(hPipe, &dados, sizeof(Pipe), &n, NULL);
 	
 	if (dados.nPlayer == 1) {
 		dados.solo = 0;
-		if (MessageBox(hWnd, TEXT("És o Player UM\nO jogo vai ser solo ?"),
+		if (MessageBox(hWnd, TEXT("ï¿½s o Player UM\nO jogo vai ser solo ?"),
 			TEXT("TIPO DE JOGO?"), MB_ICONEXCLAMATION | MB_YESNO) == IDYES)
 		{
 			dados.solo = 1;
@@ -132,21 +132,33 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 			_tprintf(_T("[ERRO] Escrever no pipe! (WriteFile)\n"));
 	}
 	else {
-		MessageBox(hWnd, TEXT("És o Player[2], vais jogar um competitivo"), TEXT("Informação"), MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(hWnd, TEXT("ï¿½s o Player[2], vais jogar um competitivo"), TEXT("Informaï¿½ï¿½o"), MB_ICONEXCLAMATION | MB_OK);
 	}
 
 
 		ReadFile(hPipe, &dados, sizeof(Pipe), &n, NULL);
 
 		loadImages(&dados.imagensP[0].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
+		loadImages(&dados.imagensP[0].imgArray[0], hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
+
+		loadImages(&dados.imagensP[0].vertical, hWnd, (TCHAR*)VERTICAL_PIPEZERO);
+		loadImages(&dados.imagensP[0].imgArray[1], hWnd, (TCHAR*)VERTICAL_PIPEZERO);
+
+		loadImages(&dados.imagensP[0].Right90, hWnd, (TCHAR*)RIGHT90ZERO);
+		loadImages(&dados.imagensP[0].imgArray[2], hWnd, (TCHAR*)RIGHT90ZERO);
+
+		loadImages(&dados.imagensP[0].Left90, hWnd, (TCHAR*)LEFT90ZERO);
+		loadImages(&dados.imagensP[0].imgArray[3], hWnd, (TCHAR*)LEFT90ZERO);
+
+		loadImages(&dados.imagensP[0].Left_1_90, hWnd, (TCHAR*)LEFT90_1ZERO);
+		loadImages(&dados.imagensP[0].imgArray[4], hWnd, (TCHAR*)LEFT90_1ZERO);
+
+		loadImages(&dados.imagensP[0].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ZERO);
+		loadImages(&dados.imagensP[0].imgArray[5], hWnd, (TCHAR*)RIGHT90_1ZERO);
+
+		loadImages(&dados.imagensP[0].blank, hWnd, (TCHAR*)BLANKZERO);
 		loadImages(&dados.imagensP[0].start, hWnd, (TCHAR*)START_PIPEZERO);
 		loadImages(&dados.imagensP[0].end, hWnd, (TCHAR*)END_PIPEZERO);
-		loadImages(&dados.imagensP[0].vertical, hWnd, (TCHAR*)VERTICAL_PIPEZERO);
-		loadImages(&dados.imagensP[0].Right90, hWnd, (TCHAR*)RIGHT90ZERO);
-		loadImages(&dados.imagensP[0].Left90, hWnd, (TCHAR*)LEFT90ZERO);
-		loadImages(&dados.imagensP[0].Left_1_90, hWnd, (TCHAR*)LEFT90_1ZERO);
-		loadImages(&dados.imagensP[0].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ZERO);
-		loadImages(&dados.imagensP[0].blank, hWnd, (TCHAR*)BLANKZERO);
 		loadImages(&dados.imagensP[0].water, hWnd, (TCHAR*)WATERZERO);
 		loadImages(&dados.imagensP[0].barrier, hWnd, (TCHAR*)BARRIERZERO);
 		loadImages(&dados.imagensP[0].beginU, hWnd, (TCHAR*)BEGINUZERO);
@@ -156,15 +168,28 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		loadImages(&dados.imagensP[0].win, hWnd, (TCHAR*)WINZERO);
 		loadImages(&dados.imagensP[0].lost, hWnd, (TCHAR*)LOSTZERO);
 
+		//
 		loadImages(&dados.imagensP[1].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEONE);
+		loadImages(&dados.imagensP[1].imgArray[0], hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
+
+		loadImages(&dados.imagensP[1].vertical, hWnd, (TCHAR*)VERTICAL_PIPEZERO);
+		loadImages(&dados.imagensP[1].imgArray[1], hWnd, (TCHAR*)VERTICAL_PIPEZERO);
+
+		loadImages(&dados.imagensP[1].Right90, hWnd, (TCHAR*)RIGHT90ZERO);
+		loadImages(&dados.imagensP[1].imgArray[2], hWnd, (TCHAR*)RIGHT90ZERO);
+
+		loadImages(&dados.imagensP[1].Left90, hWnd, (TCHAR*)LEFT90ZERO);
+		loadImages(&dados.imagensP[1].imgArray[3], hWnd, (TCHAR*)LEFT90ZERO);
+
+		loadImages(&dados.imagensP[1].Left_1_90, hWnd, (TCHAR*)LEFT90_1ZERO);
+		loadImages(&dados.imagensP[1].imgArray[4], hWnd, (TCHAR*)LEFT90_1ZERO);
+
+		loadImages(&dados.imagensP[1].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ZERO);
+		loadImages(&dados.imagensP[1].imgArray[5], hWnd, (TCHAR*)RIGHT90_1ZERO);
+
+		loadImages(&dados.imagensP[1].blank, hWnd, (TCHAR*)BLANKONE);
 		loadImages(&dados.imagensP[1].start, hWnd, (TCHAR*)START_PIPEONE);
 		loadImages(&dados.imagensP[1].end, hWnd, (TCHAR*)END_PIPEONE);
-		loadImages(&dados.imagensP[1].vertical, hWnd, (TCHAR*)VERTICAL_PIPEONE);
-		loadImages(&dados.imagensP[1].Right90, hWnd, (TCHAR*)RIGHT90ONE);
-		loadImages(&dados.imagensP[1].Left90, hWnd, (TCHAR*)LEFT90ONE);
-		loadImages(&dados.imagensP[1].Left_1_90, hWnd, (TCHAR*)LEFT90_1ONE);
-		loadImages(&dados.imagensP[1].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ONE);
-		loadImages(&dados.imagensP[1].blank, hWnd, (TCHAR*)BLANKONE);
 		loadImages(&dados.imagensP[1].water, hWnd, (TCHAR*)WATERONE);
 		loadImages(&dados.imagensP[1].barrier, hWnd, (TCHAR*)BARRIERONE);
 		loadImages(&dados.imagensP[1].beginU, hWnd, (TCHAR*)BEGINUONE);
@@ -181,7 +206,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	dados.memDC = &memDC;
 	dados.ft = 1;
 	dados.hover = 0;
-	if (MessageBox(hWnd, TEXT("O set de pipes atualmente escolhido é o 1, deseja trocar para o segundo ?"),
+	if (MessageBox(hWnd, TEXT("O set de pipes atualmente escolhido ï¿½ o 1, deseja trocar para o segundo ?"),
 		TEXT("PIPE SET"), MB_ICONEXCLAMATION | MB_YESNO) == IDYES)
 	{
 		dados.currentSet = 1;
@@ -203,14 +228,14 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	UpdateWindow(hWnd);	
 
 	while (GetMessage(&lpMsg, NULL, 0, 0)) {
-		TranslateMessage(&lpMsg);	// Pré-processamento da mensagem (p.e. obter código 
+		TranslateMessage(&lpMsg);	// Prï¿½-processamento da mensagem (p.e. obter cï¿½digo 
 					   // ASCII da tecla premida)
 		DispatchMessage(&lpMsg);	// Enviar a mensagem traduzida de volta ao Windows, que
-					   // aguarda até que a possa reenviar à função de 
+					   // aguarda atï¿½ que a possa reenviar ï¿½ funï¿½ï¿½o de 
 					   // tratamento da janela, CALLBACK TrataEventos (abaixo)
 	}
 
-	return((int)lpMsg.wParam);	// Retorna sempre o parâmetro wParam da estrutura lpMsg
+	return((int)lpMsg.wParam);	// Retorna sempre o parï¿½metro wParam da estrutura lpMsg
 }
 
 void loadImages(Image* image, HWND hWnd, TCHAR* image_path) {
@@ -406,7 +431,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			}
 			break;
 		case ID_SETINGS_SHOWNAME:
-			MessageBoxEx(NULL, dados->nome, _T("INFORMAÇÂO"), MB_OK | MB_ICONINFORMATION | MB_TASKMODAL, 0);
+			MessageBoxEx(NULL, dados->nome, _T("INFORMAï¿½ï¿½O"), MB_OK | MB_ICONINFORMATION | MB_TASKMODAL, 0);
 			break;
 		case ID_SETINGS_CHANGEBITSET:
 
