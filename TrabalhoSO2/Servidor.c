@@ -301,29 +301,26 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 	data->memDados->flagMonitorComand = 0;
 	Board aux;
 	SetEvent(data->sinc->printBoard);
-	DWORD n, res, playerLost = 3, playerWon = 3,ret;
-
-	_tprintf(TEXT("ThreadWaterRunning\n"));
+	DWORD n, res, end = 0,ret;
 
 	while (&data->continua) {
 
-		if (playerLost == 1 || playerLost == 0) {
-			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
-			data->memDados->VBoard->player[playerLost].lose = 1;
-			ReleaseMutex(data->memDados->mutexBoard);
-			
-			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
-			return 1;
-		}
+		if (end==1) {
+			for (DWORD i = 0; i < data->numPlayer; ++i) {
+				switch (data->playerServ[i]->pipeData->player.win) {
+					case -1:
+						_tprintf(TEXT("Player[%d] LOST\n"), i);
+					break;
+					case 1:
+						_tprintf(TEXT("Player[%d] WON\n"),i);
+					break;
+					
+				}
+			}
 
-		if (playerWon == 1 || playerWon == 0) {
-			_ftprintf(stderr, TEXT("\n\nYou Won\n"));
 			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
-			data->memDados->VBoard->player[playerWon].win = 1;
 			ReleaseMutex(data->memDados->mutexBoard);
-
 			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
-			return 1;
 		}
 
 		for (DWORD i = 0; i < data->numPlayer; ++i) {
@@ -343,7 +340,6 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 		
 		if (fl == 1) {
 			_tprintf(TEXT("ThreadWaterRunning - Enviei pela primeira vez as boards para os clientes \n"));
-			
 			WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
 			_ftprintf(stderr, TEXT("-----------> Water Running in %d seconds\n"), data->timeR);
 			Sleep(data->timeR * 1000);
@@ -370,12 +366,9 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 			WaitForSingleObject(data->hMutex, INFINITE);
 			if (data->hPipe->active) { 
 				res = waterMoving(&aux.player[i].board);
-				if (res == -1) {
-					playerLost = i;
-				}
-				else if(res == 1) {
-			
-				}
+				 if(res == 1) {
+					 end == res;
+				} 
 			}
 			ReleaseMutex(data->hMutex);
 		}

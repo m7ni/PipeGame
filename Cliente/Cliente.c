@@ -62,6 +62,14 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	HDC memDC = NULL;
 	BOOL fSuccess;
 
+
+	#ifdef UNICODE
+		(void)_setmode(_fileno(stdin), _O_WTEXT);
+		(void)_setmode(_fileno(stdout), _O_WTEXT);
+		(void)_setmode(_fileno(stderr), _O_WTEXT);
+	#endif
+
+
 	wcApp.cbSize = sizeof(WNDCLASSEX);      
 	wcApp.hInstance = hInst;		       						  					
 	wcApp.lpszClassName = szProgName;       // Nome da janela (neste caso = nome do programa)
@@ -122,7 +130,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	
 	if (dados.nPlayer == 1) {
 		dados.solo = 0;
-		if (MessageBox(hWnd, TEXT("�s o Player UM\nO jogo vai ser solo ?"),
+		if (MessageBox(hWnd, TEXT("És o Player UM\nO jogo vai ser solo ?"),
 			TEXT("TIPO DE JOGO?"), MB_ICONEXCLAMATION | MB_YESNO) == IDYES)
 		{
 			dados.solo = 1;
@@ -132,7 +140,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 			_tprintf(_T("[ERRO] Escrever no pipe! (WriteFile)\n"));
 	}
 	else {
-		MessageBox(hWnd, TEXT("�s o Player[2], vais jogar um competitivo"), TEXT("Informa��o"), MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(hWnd, TEXT("És o Player[2], vais jogar um competitivo"), TEXT("Informaçãoo"), MB_ICONEXCLAMATION | MB_OK);
 	}
 
 
@@ -169,7 +177,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		loadImages(&dados.imagensP[0].lost, hWnd, (TCHAR*)LOSTZERO);
 
 		//
-		loadImages(&dados.imagensP[1].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEONE);
+		loadImages(&dados.imagensP[1].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
 		loadImages(&dados.imagensP[1].imgArray[0], hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
 
 		loadImages(&dados.imagensP[1].vertical, hWnd, (TCHAR*)VERTICAL_PIPEZERO);
@@ -187,15 +195,15 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		loadImages(&dados.imagensP[1].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ZERO);
 		loadImages(&dados.imagensP[1].imgArray[5], hWnd, (TCHAR*)RIGHT90_1ZERO);
 
-		loadImages(&dados.imagensP[1].blank, hWnd, (TCHAR*)BLANKONE);
-		loadImages(&dados.imagensP[1].start, hWnd, (TCHAR*)START_PIPEONE);
-		loadImages(&dados.imagensP[1].end, hWnd, (TCHAR*)END_PIPEONE);
-		loadImages(&dados.imagensP[1].water, hWnd, (TCHAR*)WATERONE);
-		loadImages(&dados.imagensP[1].barrier, hWnd, (TCHAR*)BARRIERONE);
-		loadImages(&dados.imagensP[1].beginU, hWnd, (TCHAR*)BEGINUONE);
-		loadImages(&dados.imagensP[1].beginH, hWnd, (TCHAR*)BEGINHONE);
-		loadImages(&dados.imagensP[1].win, hWnd, (TCHAR*)WINONE);
-		loadImages(&dados.imagensP[1].lost, hWnd, (TCHAR*)LOSTONE);
+		loadImages(&dados.imagensP[1].blank, hWnd, (TCHAR*)BLANKZERO);
+		loadImages(&dados.imagensP[1].start, hWnd, (TCHAR*)START_PIPEZERO);
+		loadImages(&dados.imagensP[1].end, hWnd, (TCHAR*)END_PIPEZERO);
+		loadImages(&dados.imagensP[1].water, hWnd, (TCHAR*)WATERZERO);
+		loadImages(&dados.imagensP[1].barrier, hWnd, (TCHAR*)BARRIERZERO);
+		loadImages(&dados.imagensP[1].beginU, hWnd, (TCHAR*)BEGINUZERO);
+		loadImages(&dados.imagensP[1].beginH, hWnd, (TCHAR*)BEGINHZERO);
+		loadImages(&dados.imagensP[1].win, hWnd, (TCHAR*)WINZERO);
+		loadImages(&dados.imagensP[1].lost, hWnd, (TCHAR*)LOSTZERO);
 
 
 	
@@ -206,7 +214,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	dados.memDC = &memDC;
 	dados.ft = 1;
 	dados.hover = 0;
-	if (MessageBox(hWnd, TEXT("O set de pipes atualmente escolhido � o 1, deseja trocar para o segundo ?"),
+
+	if (MessageBox(hWnd, TEXT("O set de pipes atualmente escolhido é o 1, deseja trocar para o segundo ?"),
 		TEXT("PIPE SET"), MB_ICONEXCLAMATION | MB_YESNO) == IDYES)
 	{
 		dados.currentSet = 1;
@@ -513,11 +522,11 @@ void swapImages(Pipe* dados) {
 					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].end;
 				}
 			}
-			else if (dados->player.lose) {
+			else if (dados->player.win == -1) {
 				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].lost;
 
 			}
-			else if (dados->player.win) {
+			else if (dados->player.win == 1) {
 				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].win;
 			}
 		}
@@ -568,7 +577,7 @@ void changePipe(Pipe* dados, DWORD x, DWORD y) {
 		}
 		else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Left_1_90) {
 			dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Right_1_90;
-			dados->player.peca.desiredPiece = 'l';S
+			dados->player.peca.desiredPiece = 'l';
 
 		}
 		else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Right_1_90) {
