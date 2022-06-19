@@ -138,28 +138,21 @@ void setupBoard(MemDados* aux, DWORD actualSize, DWORD np) {
 DWORD waterMoving(PLAYER* pData) {
 
 		if (top(pData)) {
-			
-			_ftprintf(stderr, TEXT("A agua moveu-se para a cima\n"));
 		}
 		else if (bottom(pData)) {
-			_ftprintf(stderr, TEXT("A agua moveu-se para a baixo\n"));
 		}
 		else if (left(pData)) {
-			_ftprintf(stderr, TEXT("A agua moveu-se para a esquerda\n"));
 		}
 		else if (right(pData)) {
-			_ftprintf(stderr, TEXT("A agua moveu-se para a direita\n"));
 		}
 		else {
-			_ftprintf(stderr, TEXT("Não existem mais tubos\n"));
-			_ftprintf(stderr, TEXT("Perdes-te\n"));
 			pData->win = -1;
 			return 1;
 		}
 
 		placeWater(pData);
 		if (pData->currentWaterXY[0] == pData->end[0] && pData->currentWaterXY[1] == pData->end[1]){
-			_ftprintf(stderr, TEXT("Ganhas-te\n"));
+
 			pData->win = 1;
 			return 1;
 		}
@@ -170,7 +163,6 @@ DWORD waterMoving(PLAYER* pData) {
 
 void placeWater(PLAYER* pData) {
 	pData->board[pData->currentWaterXY[0]][pData->currentWaterXY[1]] = TEXT('a');
-	_ftprintf(stderr, TEXT("-----------> Placed WATER at [%d][%d]\n"), pData->currentWaterXY[0], pData->currentWaterXY[1]);
 }
 
 BOOL top(PLAYER* pData) {
@@ -273,12 +265,11 @@ DWORD placePeca(MemDados* aux, char peca, int posX, int posY,int id) {
 	WaitForSingleObject(aux->mutexBoard, INFINITE);
 
 		if (posX > aux->VBoard->actualSize || posY > aux->VBoard->actualSize || posX < 0 || posY < 0 || peca == '\0') {
-			_ftprintf(stderr, TEXT("-----------> Cant place pipe here: [%d][%d]\n"), posX, posY);
 			return -1;
 		}
 		else  {
 			aux->VBoard->player[id].board[posX][posY] = peca;
-			_ftprintf(stderr, TEXT("-----------> Placed pipe at [%d][%d][%c]\n"), posX, posY,peca);
+			_ftprintf(stderr, TEXT("-----------> Placed pipe at [%d][%d]\n"), posX, posY,peca);
 		}
 
 		ReleaseMutex(aux->mutexBoard);

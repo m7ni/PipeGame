@@ -50,7 +50,7 @@ typedef struct {
 
 	DWORD timeR; //access to data from the registry
 	DWORD* continua;
-
+	HANDLE tKB;
 	THREADGAME* playerServ[2];
 }THREADPIPE, * PTHREADPIPE;
 
@@ -71,7 +71,7 @@ typedef struct {
 
 
 int _tmain(int argc, TCHAR* argv[]) {
-	HANDLE hthread[3];
+	HANDLE hthread[6];
 	HANDLE threadC;
 	DWORD contThread = 0;
 	DWORD continua = 1;
@@ -139,9 +139,6 @@ int _tmain(int argc, TCHAR* argv[]) {
 	if (!criaMapViewOfFiles(&KB.memDados)) // Criar Vistas
 		return -1;
 
-
-	
-
 	_ftprintf(stderr, TEXT("\n---Servidor Opened---\n\nWaiting for Players...\n\n"));
 
 	TG1.sinc = &sinc;
@@ -188,13 +185,12 @@ int _tmain(int argc, TCHAR* argv[]) {
 	//Antes de criar a thread da água temos que saber se o jogo vai ser solo ou comp (vamos criar uma ou duas instancias) 
 	TP.hMutex = CreateMutex(NULL, FALSE, NULL);
 	if (TP.hMutex == NULL) {
-		_tprintf(_T("\n[ERRO] Criar Mutex! (CreateMutex)"));
+		_tprintf(_T("\n[ERRO] Creating Mutex! (CreateMutex)"));
 		exit(-1);
 	}
 
 	// Named Pipe creation
 	for ( DWORD i = 0; i < MAX_PLAYERS; i++) { //Creating the copys of the pipe, one for each Client
-		_tprintf(_T("[Server] Creating copy of pipe '%s'... (CreateNamedPipe)\n"), PIPE_NAME);
 		hEventTemp = CreateEvent(NULL, TRUE, FALSE, NULL);
 		if (hEventTemp == NULL) {
 			_tprintf(_T("[ERROR] Creating Event! (CreateEvent)"));
@@ -218,7 +214,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 		//esperar que os jogadores cheguem
 	}
 
-
+	TP.tKB = hthread[0];
 	TG1.pipeData = &pipeData1;
 	TG2.pipeData = &pipeData2;
 	TP.playerServ[0] = &TG1;
@@ -232,8 +228,6 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 
 	WaitForSingleObject(threadC, INFINITE); // necessario saber se é solo se comp
-	_ftprintf(stderr, TEXT("já temos a resposta do jogador ->> %d\n"),TP.pipeDataInitial->solo);
-
 
 	setupBoard(&KB.memDados, KB.registoDados.actualSize,TP.numPlayer); //dependendo de ser solo ou comp, vai criar um ou dois tabuleiros
 
@@ -274,15 +268,12 @@ int _tmain(int argc, TCHAR* argv[]) {
 		}
 	}
 
-
-	
 	//Thread responsible for the Water
 	if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadWaterRunning, &TP, 0, NULL)) == NULL)
 	{
 		_ftprintf(stderr, TEXT("Error creating Thread responsible for the Water\n"));
 		return -1;
 	}
-	
 
 
 	WaitForMultipleObjects(contThread, hthread, TRUE, INFINITE);
@@ -333,7 +324,6 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 				data->hPipe[i].overlap.hEvent = data->hEvents[i];
 				ret = WriteFile(data->hPipe[i].hInstance, data->playerServ[i]->pipeData, sizeof(Pipe), &n, &data->hPipe[i].overlap);
 				if (!ret && GetLastError() == ERROR_IO_PENDING) {
-					_tprintf(_T("Agendado envia\n"));
 					WaitForSingleObject(data->hPipe[i].overlap.hEvent, INFINITE);
 				}
 			}
@@ -343,14 +333,12 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 			*data->continua = 0;
 			for (DWORD i = 0; i < data->numPlayer; i++)
 				SetEvent(data->hEvents[i]);
-
+			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
 //			CancelSynchronousIo(HANDLE hThread);
-			_tprintf(TEXT("sai thread água]\n"));
 			return 0;
 		}
 		
 		if (fl == 1) {
-			_tprintf(TEXT("ThreadWaterRunning - Enviei pela primeira vez as boards para os clientes \n"));
 			WaitForSingleObject(data->sinc->timerStartEvent, INFINITE); //Comand Start
 			_ftprintf(stderr, TEXT("-----------> Water Running in %d seconds\n"), data->timeR);
 			Sleep(data->timeR * 1000);
@@ -360,7 +348,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 
 		WaitForSingleObject(data->sinc->pauseResumeEvent, INFINITE); //Pause Resume Comand
 		WaitForSingleObject(data->pipeDataInitial->eventStopW, INFINITE);
-		Sleep(1000);
+		Sleep(2000);
 
 		if (data->memDados->flagMonitorComand) { //Monitor Comand
 			_ftprintf(stderr, TEXT("-----------> Water Stoped for %d seconds\n"), data->memDados->timeMonitorComand);
@@ -379,11 +367,10 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 				res = waterMoving(&aux.player[i].board);
 				 if(res == 1) {
 					 end = res;
-				} 
+				 } 
 			}
 			ReleaseMutex(data->hMutex);
 		}
-				
 		for (DWORD i = 0; i < data->numPlayer; ++i) {
 			if (data->hPipe->active) {
 				data->playerServ[i]->pipeData->player = aux.player[i];
@@ -397,8 +384,6 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 		SetEvent(data->sinc->printBoard);
 		ResetEvent(data->sinc->printBoard);
 
-	
-	
 	}
 
 	return 0;
@@ -408,7 +393,6 @@ DWORD WINAPI ThreadInsertPipe(LPVOID param) { //uma thread destas para cada Play
 	PTHREADGAME data = (PTHREADGAME)param;
 	DWORD n,ret;
 	Board aux;
-	_tprintf(TEXT("inicio thread InsertPipe Player[%d]\n"),data->id);
 	OVERLAPPED ov;
 	HANDLE eventOp = CreateEvent(NULL,
 		TRUE,
@@ -421,13 +405,9 @@ DWORD WINAPI ThreadInsertPipe(LPVOID param) { //uma thread destas para cada Play
 		data->hPipe.overlap.hEvent = data->eventPipe;
 
 		ret = ReadFile(data->hPipe.hInstance, data->pipeData, sizeof(Pipe), &n, &data->hPipe.overlap);
-		if (ret) {
-			_tprintf(_T("recebi input\n"));
-		}
+
 		if (!ret && GetLastError() == ERROR_IO_PENDING) {
-			_tprintf(_T("Agendado insert\n"));
 			if (data->pipeData->player.win != 0) {
-				_tprintf(TEXT("fim thread InsertPipe Player[%d]\n"), data->id);
 				return 0;
 			}
 			WaitForSingleObject(data->hPipe.overlap.hEvent, INFINITE);
@@ -437,7 +417,6 @@ DWORD WINAPI ThreadInsertPipe(LPVOID param) { //uma thread destas para cada Play
 
 		
 	}
-	_tprintf(TEXT("fim thread InsertPipe Player[%d]\n"), data->id);
 }
 
 
@@ -472,7 +451,6 @@ DWORD WINAPI ThreadConectClient(LPVOID param) {
 			break; //we don't need to wait for another player
 		
 	}
-	_ftprintf(stderr, TEXT("ThreadNamedPipes ended\n"));
 }
 
 DWORD WINAPI Threadkeyboard(LPVOID param) {
@@ -508,8 +486,6 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 			_ftprintf(stderr, TEXT("-----------> Resumed\n"));
 		}
 	}
-	_ftprintf(stderr, TEXT("ThreadKeyboard ended\n"));
-
 }
 
 
@@ -556,5 +532,4 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 		
 	
 	}
-	_ftprintf(stderr, TEXT("ThreadComandsMonitor ended\n"));
 }

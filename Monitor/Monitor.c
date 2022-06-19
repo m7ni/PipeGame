@@ -85,21 +85,22 @@ DWORD WINAPI ThreadPrintBoard(LPVOID param) {
 		CopyMemory(&aux, data->memDados->VBoard, sizeof(Board));
 		ReleaseMutex(data->memDados->mutexBoard);
 
-	//	printBoard(&aux, aux.numP); //enviamos o numero de jogadores e ele imprime, um ou dois tabuleiros
+		printBoard(&aux, aux.numP); //enviamos o numero de jogadores e ele imprime, um ou dois tabuleiros
 		Sleep(2000);
 
-		/*
-		if (aux.win == 1) {
-
-			_ftprintf(stderr, TEXT("\n\nYou Won\n"));
-			*data->continua = 0;
+		
+		for (DWORD i = 0; i < aux.numP; i++) {
+			if (aux.player[i].win == 1) {
+				_ftprintf(stderr, TEXT("\n\n Player[%d] Won\n"),i);
+				*data->continua = 0;
+			}
+			else if (aux.player[i].win == -1) {
+				_ftprintf(stderr, TEXT("\n\n Player[%d] Lost\n"), i);
+				*data->continua = 0;
+			}
 		}
-		else if (aux.win == -1) {
-
-			_ftprintf(stderr, TEXT("\n\nYou Lost\n"));
-			*data->continua = 0;
-		}
-		*/
+		
+		
 		
 
 	}

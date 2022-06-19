@@ -61,12 +61,12 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	HDC memDC = NULL;
 	BOOL fSuccess;
 
+#ifdef UNICODE
+	(void)_setmode(_fileno(stdin), _O_WTEXT);
+	(void)_setmode(_fileno(stdout), _O_WTEXT);
+	(void)_setmode(_fileno(stderr), _O_WTEXT);
+#endif
 
-	#ifdef UNICODE
-		(void)_setmode(_fileno(stdin), _O_WTEXT);
-		(void)_setmode(_fileno(stdout), _O_WTEXT);
-		(void)_setmode(_fileno(stderr), _O_WTEXT);
-	#endif
 
 
 	wcApp.cbSize = sizeof(WNDCLASSEX);      
@@ -107,7 +107,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
 
 	if (!WaitNamedPipe(PIPE_NAME, 1000)) {
-		MessageBox(hWnd, TEXT("O servidor n�o est� aberto/ o servido n�o aceita mais jogadores"), TEXT("Informa��o"), MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(hWnd, TEXT("O servidor não está  aberto/ o servido não aceita mais jogadores"), TEXT("Informação"), MB_ICONEXCLAMATION | MB_OK);
 		exit(-1);
 	}
 
@@ -126,7 +126,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		NULL);
 
 	ret = ReadFile(hPipe, &dados, sizeof(Pipe), &n, NULL);
-	
+
+	dados.currentSet = 0;
+
 	if (dados.nPlayer == 1) {
 		dados.solo = 0;
 		if (MessageBox(hWnd, TEXT("És o Player UM\nO jogo vai ser solo ?"),
@@ -134,35 +136,32 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		{
 			dados.solo = 1;
 		}
+		if (MessageBox(hWnd, TEXT("O set de pipes atualmente escolhido é o 1, deseja trocar para o segundo ?"),
+			TEXT("PIPE SET"), MB_ICONEXCLAMATION | MB_YESNO) == IDYES)
+		{
+			dados.currentSet = 1;
+		}
 
 		if (!WriteFile(hPipe, &dados, sizeof(Pipe), &n, NULL))
 			_tprintf(_T("[ERRO] Escrever no pipe! (WriteFile)\n"));
 	}
 	else {
 		MessageBox(hWnd, TEXT("És o Player[2], vais jogar um competitivo"), TEXT("Informaçãoo"), MB_ICONEXCLAMATION | MB_OK);
+		if (MessageBox(hWnd, TEXT("O set de pipes atualmente escolhido é o 1, deseja trocar para o segundo ?"),
+			TEXT("PIPE SET"), MB_ICONEXCLAMATION | MB_YESNO) == IDYES)
+		{
+			dados.currentSet = 1;
+		}
 	}
-
 
 		ReadFile(hPipe, &dados, sizeof(Pipe), &n, NULL);
 
 		loadImages(&dados.imagensP[0].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
-		//loadImages(&dados.imagensP[0].imgArray[0], hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
-
 		loadImages(&dados.imagensP[0].vertical, hWnd, (TCHAR*)VERTICAL_PIPEZERO);
-		//loadImages(&dados.imagensP[0].imgArray[1], hWnd, (TCHAR*)VERTICAL_PIPEZERO);
-
 		loadImages(&dados.imagensP[0].Right90, hWnd, (TCHAR*)RIGHT90ZERO);
-		//loadImages(&dados.imagensP[0].imgArray[2], hWnd, (TCHAR*)RIGHT90ZERO);
-
 		loadImages(&dados.imagensP[0].Left90, hWnd, (TCHAR*)LEFT90ZERO);
-		//loadImages(&dados.imagensP[0].imgArray[3], hWnd, (TCHAR*)LEFT90ZERO);
-
 		loadImages(&dados.imagensP[0].Left_1_90, hWnd, (TCHAR*)LEFT90_1ZERO);
-		//loadImages(&dados.imagensP[0].imgArray[4], hWnd, (TCHAR*)LEFT90_1ZERO);
-
 		loadImages(&dados.imagensP[0].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ZERO);
-		//loadImages(&dados.imagensP[0].imgArray[5], hWnd, (TCHAR*)RIGHT90_1ZERO);
-
 		loadImages(&dados.imagensP[0].blank, hWnd, (TCHAR*)BLANKZERO);
 		loadImages(&dados.imagensP[0].start, hWnd, (TCHAR*)START_PIPEZERO);
 		loadImages(&dados.imagensP[0].end, hWnd, (TCHAR*)END_PIPEZERO);
@@ -176,37 +175,21 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		loadImages(&dados.imagensP[0].lost, hWnd, (TCHAR*)LOSTZERO);
 
 		//
-		loadImages(&dados.imagensP[1].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
-		//loadImages(&dados.imagensP[1].imgArray[0], hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
+		loadImages(&dados.imagensP[1].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEONE);
+		loadImages(&dados.imagensP[1].vertical, hWnd, (TCHAR*)VERTICAL_PIPEONE);
+		loadImages(&dados.imagensP[1].Right90, hWnd, (TCHAR*)RIGHT90ONE);
+		loadImages(&dados.imagensP[1].Left90, hWnd, (TCHAR*)LEFT90ONE);
+		loadImages(&dados.imagensP[1].Left_1_90, hWnd, (TCHAR*)LEFT90_1ONE);
+		loadImages(&dados.imagensP[1].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ONE);
+		loadImages(&dados.imagensP[1].blank, hWnd, (TCHAR*)BLANKONE);
+		loadImages(&dados.imagensP[1].end, hWnd, (TCHAR*)END_PIPEONE);
+		loadImages(&dados.imagensP[1].water, hWnd, (TCHAR*)WATERONE);
+		loadImages(&dados.imagensP[1].barrier, hWnd, (TCHAR*)BARRIERONE);
+		loadImages(&dados.imagensP[1].beginU, hWnd, (TCHAR*)BEGINUONE);
+		loadImages(&dados.imagensP[1].beginH, hWnd, (TCHAR*)BEGINHONE);
+		loadImages(&dados.imagensP[1].win, hWnd, (TCHAR*)WINONE);
+		loadImages(&dados.imagensP[1].lost, hWnd, (TCHAR*)LOSTONE);
 
-		loadImages(&dados.imagensP[1].vertical, hWnd, (TCHAR*)VERTICAL_PIPEZERO);
-		//loadImages(&dados.imagensP[1].imgArray[1], hWnd, (TCHAR*)VERTICAL_PIPEZERO);
-
-		loadImages(&dados.imagensP[1].Right90, hWnd, (TCHAR*)RIGHT90ZERO);
-		//loadImages(&dados.imagensP[1].imgArray[2], hWnd, (TCHAR*)RIGHT90ZERO);
-
-		loadImages(&dados.imagensP[1].Left90, hWnd, (TCHAR*)LEFT90ZERO);
-		//loadImages(&dados.imagensP[1].imgArray[3], hWnd, (TCHAR*)LEFT90ZERO);
-
-		loadImages(&dados.imagensP[1].Left_1_90, hWnd, (TCHAR*)LEFT90_1ZERO);
-		//loadImages(&dados.imagensP[1].imgArray[4], hWnd, (TCHAR*)LEFT90_1ZERO);
-
-		loadImages(&dados.imagensP[1].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ZERO);
-		//loadImages(&dados.imagensP[1].imgArray[5], hWnd, (TCHAR*)RIGHT90_1ZERO);
-
-		loadImages(&dados.imagensP[1].blank, hWnd, (TCHAR*)BLANKZERO);
-		loadImages(&dados.imagensP[1].start, hWnd, (TCHAR*)START_PIPEZERO);
-		loadImages(&dados.imagensP[1].end, hWnd, (TCHAR*)END_PIPEZERO);
-		loadImages(&dados.imagensP[1].water, hWnd, (TCHAR*)WATERZERO);
-		loadImages(&dados.imagensP[1].barrier, hWnd, (TCHAR*)BARRIERZERO);
-		loadImages(&dados.imagensP[1].beginU, hWnd, (TCHAR*)BEGINUZERO);
-		loadImages(&dados.imagensP[1].beginH, hWnd, (TCHAR*)BEGINHZERO);
-		loadImages(&dados.imagensP[1].win, hWnd, (TCHAR*)WINZERO);
-		loadImages(&dados.imagensP[1].lost, hWnd, (TCHAR*)LOSTZERO);
-
-
-	
-	dados.currentSet = 0;
 	dados.hPipe = hPipe;
 	dados.mutexCliente = CreateMutex(NULL, FALSE, NULL);
 	dados.hWnd = hWnd;
@@ -214,11 +197,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	dados.ft = 1;
 	dados.hover = 0;
 
-	if (MessageBox(hWnd, TEXT("O set de pipes atualmente escolhido é o 1, deseja trocar para o segundo ?"),
-		TEXT("PIPE SET"), MB_ICONEXCLAMATION | MB_YESNO) == IDYES)
-	{
-		dados.currentSet = 1;
-	}
+
 	criaSincClient(&dados);
 	init(&dados);
 	swapImages(&dados);
@@ -277,20 +256,22 @@ DWORD WINAPI printTabuleiro(LPVOID lparam)
 
 		WaitForSingleObject(dados->mutexCliente, INFINITE);
 		ret = ReadFile(dados->hPipe, dados, sizeof(Pipe), &n, &ov);
-		if (ret) {
-			
-		}
 		if (!ret && GetLastError() == ERROR_IO_PENDING) {
-
 			WaitForSingleObject(ov.hEvent, INFINITE);
-
 		}
-	
+
 		swapImages(dados);
+		ReleaseMutex(dados->mutexCliente);
 
 		InvalidateRect(dados->hWnd, NULL, TRUE);
-		ReleaseMutex(dados->mutexCliente);
+		
+		if (dados->player.win != 0) {
+			Sleep(1000);
+			CloseHandle(eventOp);
+			return 0;
+		}
 	}
+
 }
 
 INT_PTR CALLBACK DlgProc(HWND dlg, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -334,9 +315,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	HWND button;
 	INT_PTR ret;
 	switch (messg) {
-	case WM_CREATE:
-		//GetClientRect(hWnd, &rect);
-		
+	case WM_CREATE:	
 		break;
 	
 	case WM_PAINT:
@@ -355,6 +334,11 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		}
 
 		EndPaint(hWnd, &ps);
+		
+		if (dados->player.win != 0) {
+			Sleep(5000);
+			PostQuitMessage(0);
+		}
 	
 		break;
 	case WM_RBUTTONDOWN:
@@ -390,6 +374,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			}
 		}
 		break;
+		/*
 	case WM_MOUSEMOVE:
 		dados = (Pipe*)GetWindowLongPtr(hWnd, 0);
 		pos.x = GET_X_LPARAM(lParam);
@@ -429,6 +414,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		fMouseTracking = FALSE;
 		unpause_water(dados, dados->selected_cell);
 		break;
+		*/
 	case WM_COMMAND:
 		dados = (Pipe*)GetWindowLongPtr(hWnd, 0);
 		switch (wParam) {
@@ -439,15 +425,14 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			}
 			break;
 		case ID_SETINGS_SHOWNAME:
-			MessageBoxEx(NULL, dados->nome, _T("INFORMA��O"), MB_OK | MB_ICONINFORMATION | MB_TASKMODAL, 0);
+			MessageBoxEx(NULL, dados->nome, _T("INFORMAÇÃO"), MB_OK | MB_ICONINFORMATION | MB_TASKMODAL, 0);
 			break;
 		case ID_SETINGS_CHANGEBITSET:
-
 			if (dados->currentSet == 1)
 				dados->currentSet = 0;
 			else
 				dados->currentSet = 1;
-			swapImages(&dados);
+			swapImages(dados);
 			InvalidateRect(dados->hWnd, NULL, TRUE);
 			break;
 		case ID_SETINGS_EXIT:
@@ -457,10 +442,13 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		
 		break;
 	case WM_CLOSE:
-			//fazer os closes
+		dados = (Pipe*)GetWindowLongPtr(hWnd, 0);
+		CloseHandle(dados->hPipe);
 			DestroyWindow(hWnd);
 		break;
 	case WM_DESTROY: 
+		dados = (Pipe*)GetWindowLongPtr(hWnd, 0);
+		CloseHandle(dados->hPipe);
 		PostQuitMessage(0);
 		break;
 	default:
@@ -593,8 +581,6 @@ void changePipe(Pipe* dados, DWORD x, DWORD y) {
 		ov.hEvent = eventOp;
 
 		ret = WriteFile(dados->hPipe, dados, sizeof(Pipe), &n, &ov);
-
-			
 		if (!ret && GetLastError() == ERROR_IO_PENDING) {
 			WaitForSingleObject(ov.hEvent, INFINITE);
 		}
@@ -629,8 +615,6 @@ void pause_water(Pipe* dados, vect2 selected) {
 }
 
 void unpause_water(Pipe* dados, vect2 selected) {
-
-
 	SetEvent(dados->eventStopW);
 }
 
@@ -649,5 +633,4 @@ void init(Pipe* dados) {
 		pos_x = 0;
 		pos_y += 60;
 	}
-
 }
