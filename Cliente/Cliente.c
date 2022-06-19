@@ -25,7 +25,6 @@
 
 #define HORIZONTAL_PIPEONE TEXT("pipes1/2.bmp")
 #define VERTICAL_PIPEONE TEXT("pipes1/1.bmp")
-#define START_PIPEONE TEXT("pipes1/begin.bmp")
 #define BLANKONE TEXT("pipes1/0.bmp")
 #define END_PIPEONE TEXT("pipes1/end.bmp")
 #define LEFT90ONE TEXT("pipes1/4.bmp")
@@ -147,22 +146,22 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		ReadFile(hPipe, &dados, sizeof(Pipe), &n, NULL);
 
 		loadImages(&dados.imagensP[0].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
-		loadImages(&dados.imagensP[0].imgArray[0], hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
+		//loadImages(&dados.imagensP[0].imgArray[0], hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
 
 		loadImages(&dados.imagensP[0].vertical, hWnd, (TCHAR*)VERTICAL_PIPEZERO);
-		loadImages(&dados.imagensP[0].imgArray[1], hWnd, (TCHAR*)VERTICAL_PIPEZERO);
+		//loadImages(&dados.imagensP[0].imgArray[1], hWnd, (TCHAR*)VERTICAL_PIPEZERO);
 
 		loadImages(&dados.imagensP[0].Right90, hWnd, (TCHAR*)RIGHT90ZERO);
-		loadImages(&dados.imagensP[0].imgArray[2], hWnd, (TCHAR*)RIGHT90ZERO);
+		//loadImages(&dados.imagensP[0].imgArray[2], hWnd, (TCHAR*)RIGHT90ZERO);
 
 		loadImages(&dados.imagensP[0].Left90, hWnd, (TCHAR*)LEFT90ZERO);
-		loadImages(&dados.imagensP[0].imgArray[3], hWnd, (TCHAR*)LEFT90ZERO);
+		//loadImages(&dados.imagensP[0].imgArray[3], hWnd, (TCHAR*)LEFT90ZERO);
 
 		loadImages(&dados.imagensP[0].Left_1_90, hWnd, (TCHAR*)LEFT90_1ZERO);
-		loadImages(&dados.imagensP[0].imgArray[4], hWnd, (TCHAR*)LEFT90_1ZERO);
+		//loadImages(&dados.imagensP[0].imgArray[4], hWnd, (TCHAR*)LEFT90_1ZERO);
 
 		loadImages(&dados.imagensP[0].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ZERO);
-		loadImages(&dados.imagensP[0].imgArray[5], hWnd, (TCHAR*)RIGHT90_1ZERO);
+		//loadImages(&dados.imagensP[0].imgArray[5], hWnd, (TCHAR*)RIGHT90_1ZERO);
 
 		loadImages(&dados.imagensP[0].blank, hWnd, (TCHAR*)BLANKZERO);
 		loadImages(&dados.imagensP[0].start, hWnd, (TCHAR*)START_PIPEZERO);
@@ -178,22 +177,22 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
 		//
 		loadImages(&dados.imagensP[1].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
-		loadImages(&dados.imagensP[1].imgArray[0], hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
+		//loadImages(&dados.imagensP[1].imgArray[0], hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
 
 		loadImages(&dados.imagensP[1].vertical, hWnd, (TCHAR*)VERTICAL_PIPEZERO);
-		loadImages(&dados.imagensP[1].imgArray[1], hWnd, (TCHAR*)VERTICAL_PIPEZERO);
+		//loadImages(&dados.imagensP[1].imgArray[1], hWnd, (TCHAR*)VERTICAL_PIPEZERO);
 
 		loadImages(&dados.imagensP[1].Right90, hWnd, (TCHAR*)RIGHT90ZERO);
-		loadImages(&dados.imagensP[1].imgArray[2], hWnd, (TCHAR*)RIGHT90ZERO);
+		//loadImages(&dados.imagensP[1].imgArray[2], hWnd, (TCHAR*)RIGHT90ZERO);
 
 		loadImages(&dados.imagensP[1].Left90, hWnd, (TCHAR*)LEFT90ZERO);
-		loadImages(&dados.imagensP[1].imgArray[3], hWnd, (TCHAR*)LEFT90ZERO);
+		//loadImages(&dados.imagensP[1].imgArray[3], hWnd, (TCHAR*)LEFT90ZERO);
 
 		loadImages(&dados.imagensP[1].Left_1_90, hWnd, (TCHAR*)LEFT90_1ZERO);
-		loadImages(&dados.imagensP[1].imgArray[4], hWnd, (TCHAR*)LEFT90_1ZERO);
+		//loadImages(&dados.imagensP[1].imgArray[4], hWnd, (TCHAR*)LEFT90_1ZERO);
 
 		loadImages(&dados.imagensP[1].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ZERO);
-		loadImages(&dados.imagensP[1].imgArray[5], hWnd, (TCHAR*)RIGHT90_1ZERO);
+		//loadImages(&dados.imagensP[1].imgArray[5], hWnd, (TCHAR*)RIGHT90_1ZERO);
 
 		loadImages(&dados.imagensP[1].blank, hWnd, (TCHAR*)BLANKZERO);
 		loadImages(&dados.imagensP[1].start, hWnd, (TCHAR*)START_PIPEZERO);
@@ -477,7 +476,7 @@ void swapImages(Pipe* dados) {
 
 	for (DWORD x = 0; x < dados->player.actualSize; x++) {
 		for (DWORD y = 0; y < dados->player.actualSize; y++) {
-			if (!dados->player.lose || !dados->player.win) {
+			if (dados->player.win == 0) {
 				if (dados->player.board[x][y] == '.')
 				{
 					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].blank;
@@ -522,11 +521,11 @@ void swapImages(Pipe* dados) {
 					dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].end;
 				}
 			}
-			else if (dados->player.win == -1) {
+			else if (dados->player.win == 1) {
 				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].lost;
 
 			}
-			else if (dados->player.win == 1) {
+			else if (dados->player.win == -1) {
 				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].win;
 			}
 		}

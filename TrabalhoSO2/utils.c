@@ -153,14 +153,14 @@ DWORD waterMoving(PLAYER* pData) {
 		else {
 			_ftprintf(stderr, TEXT("Não existem mais tubos\n"));
 			_ftprintf(stderr, TEXT("Perdes-te\n"));
-			pData->win = 1;
+			pData->win = -1;
 			return 1;
 		}
 
 		placeWater(pData);
 		if (pData->currentWaterXY[0] == pData->end[0] && pData->currentWaterXY[1] == pData->end[1]){
 			_ftprintf(stderr, TEXT("Ganhas-te\n"));
-			pData->win = -1;
+			pData->win = 1;
 			return 1;
 		}
 

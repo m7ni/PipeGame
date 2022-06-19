@@ -243,7 +243,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 	CopyMemory(&aux, KB.memDados.VBoard, sizeof(Board));
 	ReleaseMutex(KB.memDados.mutexBoard);
 
-	
+	aux.player[1].win == 3;
+	aux.player[0].win == 3;
 
 	TG1.id = 0;
 	TG1.pipeData->player = aux.player[0];
@@ -262,6 +263,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 		TG2.hPipe = TP.hPipe[1];
 		TG2.eventPipe = TP.hEvents[1];
 		TG2.mutexP = TP.hMutex;
+	
 		TG2.pipeData->player = aux.player[1];
 		TG2.id = 1;
 		aux.player[1].actualSize = aux.actualSize;
@@ -306,6 +308,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 	while (&data->continua) {
 
 		if (end==1) {
+			fl =2;
 			for (DWORD i = 0; i < data->numPlayer; ++i) {
 				switch (data->playerServ[i]->pipeData->player.win) {
 					case -1:
@@ -336,7 +339,15 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 			}
 			ReleaseMutex(data->hMutex);
 		}	
+		if (fl == 2) {
+			*data->continua = 0;
+			for (DWORD i = 0; i < data->numPlayer; i++)
+				SetEvent(data->hEvents[i]);
 
+//			CancelSynchronousIo(HANDLE hThread);
+			_tprintf(TEXT("sai thread água]\n"));
+			return 0;
+		}
 		
 		if (fl == 1) {
 			_tprintf(TEXT("ThreadWaterRunning - Enviei pela primeira vez as boards para os clientes \n"));
@@ -367,7 +378,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 			if (data->hPipe->active) { 
 				res = waterMoving(&aux.player[i].board);
 				 if(res == 1) {
-					 end == res;
+					 end = res;
 				} 
 			}
 			ReleaseMutex(data->hMutex);
@@ -389,9 +400,7 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 	
 	
 	}
-	for (DWORD i = 0; i < data->numPlayer; i++)
-		SetEvent(data->hEvents[i]);
-	_tprintf(TEXT("sai thread água]\n"));
+
 	return 0;
 }
 
@@ -417,6 +426,10 @@ DWORD WINAPI ThreadInsertPipe(LPVOID param) { //uma thread destas para cada Play
 		}
 		if (!ret && GetLastError() == ERROR_IO_PENDING) {
 			_tprintf(_T("Agendado insert\n"));
+			if (data->pipeData->player.win != 0) {
+				_tprintf(TEXT("fim thread InsertPipe Player[%d]\n"), data->id);
+				return 0;
+			}
 			WaitForSingleObject(data->hPipe.overlap.hEvent, INFINITE);
 
 		}
@@ -452,8 +465,6 @@ DWORD WINAPI ThreadConectClient(LPVOID param) {
 
 		if (data->numPlayer == 2)
 			break;
-
-		//WaitForSingleObject(data->pipeData->read, INFINITE);
 
 
 		ret = ReadFile(data->hPipe[i].hInstance, data->pipeDataInitial, sizeof(Pipe), &n, NULL);
@@ -545,4 +556,5 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 		
 	
 	}
+	_ftprintf(stderr, TEXT("ThreadComandsMonitor ended\n"));
 }

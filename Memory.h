@@ -72,28 +72,6 @@ typedef struct {   //comunicar pelo pipe
 } Pipe;
 
 
-typedef struct {   //comunicar pelo pipe
-	unsigned int nPlayer;
-	unsigned int solo;
-	PLAYER player;
-
-	TabImagens tabImages[20][20];
-	Images imagensP;
-	HANDLE read;
-	HANDLE* hPipe;
-
-	int current_image;
-	TCHAR current_pipe;
-	HDC* memDC;
-	HDC bmpDC;
-	HANDLE mutexCliente;
-	HWND hWnd;
-	BITMAP bmp;
-
-	HANDLE eventRead;
-	unsigned int ft;
-} Cliente;
-
 typedef struct { 
 	Comand UserComands[TAM]; //Passar comandos MONITOR -> SERVIDOR
 	unsigned int in;					// Posição de escrita no buffer circular
