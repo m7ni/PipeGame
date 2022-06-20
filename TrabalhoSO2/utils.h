@@ -13,4 +13,4 @@ void setupBoard(MemDados* aux, DWORD actualSize, DWORD np);
 DWORD insertWater(PLAYER* pData);
 DWORD placePeca(PLAYER* b, char peca, int posX, int posY);
 void printBoard(Board* aux);
-DWORD putWall(Board* b, MemDados* aux, DWORD posX, DWORD posY);
+DWORD putWall(Board* b, DWORD posX, DWORD posY);

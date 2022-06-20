@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include "../Memory.h"
 #include "../Registry.h"
+#include "../Servidor.h"
+
 #include"utils.h"
 
 #define PIPE_NAME TEXT("\\\\.\\pipe\\teste")
@@ -312,6 +314,8 @@ DWORD WINAPI ThreadWaterRunning(LPVOID param) { //comum aos dois Players
 				}
 			}
 
+			SetEvent(data->sinc->endMonitor);
+
 			WaitForSingleObject(data->memDados->mutexBoard, INFINITE);
 			ReleaseMutex(data->memDados->mutexBoard);
 			ReleaseSemaphore(data->memDados->semServer, 1, NULL);
@@ -419,7 +423,6 @@ DWORD WINAPI ThreadInsertPipe(LPVOID param) { //uma thread destas para cada Play
 	}
 }
 
-
 DWORD WINAPI ThreadConectClient(LPVOID param) {
 	THREADPIPE* data = (THREADPIPE*)param;
 	TCHAR comand[SIZE];
@@ -458,6 +461,9 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 	TCHAR comand[SIZE];
 	DWORD aux;
 
+
+	SetEvent(data->sinc->timerStartEvent);
+
 	while (*data->continua)
 	{
 		_ftprintf(stdout, TEXT("Comand: "));
@@ -467,13 +473,10 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 			return 1;
 		}
 		
-		if (wcscmp(comand, TEXT("start")) == 0) {
-			SetEvent(data->sinc->timerStartEvent);             
-			_ftprintf(stderr, TEXT("-----------> Started\n"));
-		}
-		else
-		if (wcscmp(comand, TEXT("end")) == 0) {
+		
+		else if (wcscmp(comand, TEXT("end")) == 0) {
 			SetEvent(data->sinc->endMonitor);
+			
 			*data->continua = 0;
 			
 		}
@@ -487,7 +490,6 @@ DWORD WINAPI Threadkeyboard(LPVOID param) {
 		}
 	}
 }
-
 
 
 DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler do buffer circular os comandos do monitor
@@ -519,13 +521,14 @@ DWORD WINAPI ThreadComandsMonitor(LPVOID param) { //thread vai servir para ler d
 
 		case 2:
 			
-			if (!putWall(data->memDados, aux.wallX, aux.wallY, 2)) { ////mudar isto
+			if (!putWall(data->memDados, aux.wallX, aux.wallY)) { ////mudar isto
 				_ftprintf(stderr, TEXT("Error placing wall\n"));
 			}else
 				SetEvent(data->sinc->printBoard);
 
 			break;
 		case 3:
+			
 			//enviar para o cliente (ns bem como)
 			break;
 		}
