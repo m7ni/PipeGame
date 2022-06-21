@@ -42,6 +42,7 @@ void pause_water(Pipe* dados, vect2 selected);
 void unpause_water(Pipe* dados, vect2 selected);
 LRESULT CALLBACK TrataEventos(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI printTabuleiro(LPVOID lparam);
+
 void swapImages(Pipe* dados);
 TCHAR szProgName[] = TEXT("Base");
 void loadImages(Image* image, HWND hWnd, TCHAR* image_path);
@@ -128,6 +129,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	ret = ReadFile(hPipe, &dados, sizeof(Pipe), &n, NULL);
 
 	dados.currentSet = 0;
+	dados.randPecaflag = 0;
 
 	if (dados.nPlayer == 1) {
 		dados.solo = 0;
@@ -152,17 +154,28 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		{
 			dados.currentSet = 1;
 		}
-		*/
 	}
 
 		ReadFile(hPipe, &dados, sizeof(Pipe), &n, NULL);
 
 		loadImages(&dados.imagensP[0].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
+		loadImages(&dados.imagensP[0].imgArray[0], hWnd, (TCHAR*)HORIZONTAL_PIPEZERO);
+
 		loadImages(&dados.imagensP[0].vertical, hWnd, (TCHAR*)VERTICAL_PIPEZERO);
+		loadImages(&dados.imagensP[0].imgArray[1], hWnd, (TCHAR*)VERTICAL_PIPEZERO);
+
 		loadImages(&dados.imagensP[0].Right90, hWnd, (TCHAR*)RIGHT90ZERO);
+		loadImages(&dados.imagensP[0].imgArray[2], hWnd, (TCHAR*)RIGHT90ZERO);
+
 		loadImages(&dados.imagensP[0].Left90, hWnd, (TCHAR*)LEFT90ZERO);
+		loadImages(&dados.imagensP[0].imgArray[3], hWnd, (TCHAR*)LEFT90ZERO);
+
 		loadImages(&dados.imagensP[0].Left_1_90, hWnd, (TCHAR*)LEFT90_1ZERO);
+		loadImages(&dados.imagensP[0].imgArray[4], hWnd, (TCHAR*)LEFT90_1ZERO);
+
 		loadImages(&dados.imagensP[0].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ZERO);
+		loadImages(&dados.imagensP[0].imgArray[5], hWnd, (TCHAR*)RIGHT90_1ZERO);
+
 		loadImages(&dados.imagensP[0].blank, hWnd, (TCHAR*)BLANKZERO);
 		loadImages(&dados.imagensP[0].start, hWnd, (TCHAR*)START_PIPEZERO);
 		loadImages(&dados.imagensP[0].end, hWnd, (TCHAR*)END_PIPEZERO);
@@ -177,11 +190,23 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
 		//
 		loadImages(&dados.imagensP[1].horizontal, hWnd, (TCHAR*)HORIZONTAL_PIPEONE);
+		loadImages(&dados.imagensP[1].imgArray[0], hWnd, (TCHAR*)HORIZONTAL_PIPEONE);
+
 		loadImages(&dados.imagensP[1].vertical, hWnd, (TCHAR*)VERTICAL_PIPEONE);
+		loadImages(&dados.imagensP[1].imgArray[1], hWnd, (TCHAR*)VERTICAL_PIPEONE);
+
 		loadImages(&dados.imagensP[1].Right90, hWnd, (TCHAR*)RIGHT90ONE);
+		loadImages(&dados.imagensP[1].imgArray[2], hWnd, (TCHAR*)RIGHT90ONE);
+
 		loadImages(&dados.imagensP[1].Left90, hWnd, (TCHAR*)LEFT90ONE);
+		loadImages(&dados.imagensP[1].imgArray[3], hWnd, (TCHAR*)LEFT90ONE);
+
 		loadImages(&dados.imagensP[1].Left_1_90, hWnd, (TCHAR*)LEFT90_1ONE);
+		loadImages(&dados.imagensP[1].imgArray[4], hWnd, (TCHAR*)LEFT90_1ONE);
+
 		loadImages(&dados.imagensP[1].Right_1_90, hWnd, (TCHAR*)RIGHT90_1ONE);
+		loadImages(&dados.imagensP[1].imgArray[5], hWnd, (TCHAR*)RIGHT90_1ONE);
+
 		loadImages(&dados.imagensP[1].blank, hWnd, (TCHAR*)BLANKONE);
 		loadImages(&dados.imagensP[1].end, hWnd, (TCHAR*)END_PIPEONE);
 		loadImages(&dados.imagensP[1].water, hWnd, (TCHAR*)WATERONE);
@@ -197,6 +222,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	dados.memDC = &memDC;
 	dados.ft = 1;
 	dados.hover = 0;
+	dados.continua = 1;
 
 
 	criaSincClient(&dados);
@@ -208,6 +234,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	{
 		return -1;
 	}
+
 
 
 	SetWindowLongPtr(hWnd, 0, (LONG_PTR)&dados);
@@ -250,7 +277,7 @@ DWORD WINAPI printTabuleiro(LPVOID lparam)
 		FALSE,
 		NULL);
 
-	while (1)
+	while (dados->continua)
 	{
 		ZeroMemory(&ov, sizeof(ov));
 		ov.hEvent = eventOp;
@@ -260,7 +287,6 @@ DWORD WINAPI printTabuleiro(LPVOID lparam)
 		if (!ret && GetLastError() == ERROR_IO_PENDING) {
 			WaitForSingleObject(ov.hEvent, INFINITE);
 		}
-
 		swapImages(dados);
 		ReleaseMutex(dados->mutexCliente);
 
@@ -274,6 +300,7 @@ DWORD WINAPI printTabuleiro(LPVOID lparam)
 	}
 
 }
+
 
 INT_PTR CALLBACK DlgProc(HWND dlg, UINT msg, WPARAM wParam, LPARAM lParam) {
 	Pipe* dados = (Pipe*)GetWindowLongPtr(GetParent(dlg), 0);
@@ -315,6 +342,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	static int yBitmap;
 	HWND button;
 	INT_PTR ret;
+	DWORD cont = 0;
 	switch (messg) {
 	case WM_CREATE:	
 		break;
@@ -363,7 +391,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		dados = (Pipe*)GetWindowLongPtr(hWnd, 0);
 		pos.x = GET_X_LPARAM(lParam);
 		pos.y = GET_Y_LPARAM(lParam);
-
+		
 		for (DWORD y = 0; y < dados->player.actualSize; y++) {
 			for (DWORD x = 0; x < dados->player.actualSize; x++) {
 				if (pos.x > dados->tabImages[y][x].coord.x && pos.x < dados->tabImages[y][x].coord.x + dados->tabImages[y][x].image->bitmap.bmWidth
@@ -528,6 +556,8 @@ void changePipe(Pipe* dados, DWORD x, DWORD y) {
 	TCHAR buf[256], value = NULL;
 	DWORD n,ret;
 	OVERLAPPED ov;
+	//dados->randPecaflag = 1
+	srand(time(NULL));
 
 	HANDLE eventOp = CreateEvent(NULL,
 		TRUE,
@@ -539,6 +569,119 @@ void changePipe(Pipe* dados, DWORD x, DWORD y) {
 		dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].end &&
 		dados->tabImages[y][x].image != &dados->imagensP[dados->currentSet].barrier)  {
 
+		if (dados->randPecaflag == 1) {
+			DWORD peca = rand() % 5;
+
+
+			switch (peca)
+			{
+
+				case 0:
+					dados->player.peca.desiredPiece = 'z';
+					break;
+				case 1:
+					dados->player.peca.desiredPiece = 'x';
+					break;
+
+				case 2:
+					dados->player.peca.desiredPiece = 's';
+					break;
+
+				case 3:
+					dados->player.peca.desiredPiece = 'd';
+					break;
+
+				case 4:
+					dados->player.peca.desiredPiece = 'r';
+					break;
+
+				case 5:
+					dados->player.peca.desiredPiece = 'l';
+					break;
+
+				default:
+					break;
+			}
+			dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].imgArray[peca];
+		}
+		else {
+			if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].blank)
+			{
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].horizontal;
+				dados->player.peca.desiredPiece = 'z';
+			}
+			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].horizontal)
+			{
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].vertical;
+				dados->player.peca.desiredPiece = 'x';
+			}
+			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].vertical) {
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Right90;
+				dados->player.peca.desiredPiece = 's';
+			}
+			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Right90) {
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Left90;
+				dados->player.peca.desiredPiece = 'd';
+
+			}
+			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Left90) {
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Left_1_90;
+				dados->player.peca.desiredPiece = 'r';
+
+			}
+			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Left_1_90) {
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].Right_1_90;
+				dados->player.peca.desiredPiece = 'l';
+
+			}
+			else if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].Right_1_90) {
+				dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].horizontal;
+				dados->player.peca.desiredPiece = 'z';
+
+			}
+			/*
+			switch (dados->cont)
+			{
+
+			case 0:
+				dados->player.peca.desiredPiece = 'z';
+				dados->cont++;
+				break;
+			case 1:
+				dados->player.peca.desiredPiece = 'x';
+				dados->cont++;
+				break;
+
+			case 2:
+				dados->player.peca.desiredPiece = 's';
+				dados->cont++;
+				break;
+
+			case 3:
+				dados->player.peca.desiredPiece = 'd';
+				dados->cont++;
+				break;
+
+			case 4:
+				dados->player.peca.desiredPiece = 'r';
+				dados->cont++;
+				break;
+
+			case 5:
+				dados->player.peca.desiredPiece = 'l';
+				dados->cont++;
+				break;
+
+			default:
+				break;
+			}
+			dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].imgArray[dados->cont];
+
+			if (dados->cont == 5)
+				dados->cont = 0;
+			*/
+		}
+		/*
 		if (dados->tabImages[x][y].image == &dados->imagensP[dados->currentSet].blank)
 		{
 			dados->tabImages[x][y].image = &dados->imagensP[dados->currentSet].horizontal;
@@ -573,6 +716,7 @@ void changePipe(Pipe* dados, DWORD x, DWORD y) {
 			dados->player.peca.desiredPiece = 'z';
 
 		}
+		*/
 
 		dados->player.peca.x = x;
 		dados->player.peca.y = y;
@@ -618,7 +762,6 @@ void pause_water(Pipe* dados, vect2 selected) {
 void unpause_water(Pipe* dados, vect2 selected) {
 	SetEvent(dados->eventStopW);
 }
-
 
 void init(Pipe* dados) {
 

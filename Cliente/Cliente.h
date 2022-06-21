@@ -36,6 +36,7 @@ typedef struct {
 	Image lost;
 	HANDLE mutex;
 	Image barrier;
+	Image imgArray[6];
 }Images;
 
 typedef struct {

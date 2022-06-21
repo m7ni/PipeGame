@@ -69,6 +69,7 @@ typedef struct {   //comunicar pelo pipe
 	TCHAR nome[256];
 	unsigned int ft;
 	DWORD randPecaflag;
+	DWORD continua;
 } Pipe;
 
 
@@ -92,6 +93,7 @@ typedef struct {
 	unsigned int flagMonitorComand;
 	unsigned int timeMonitorComand;
 
+	DWORD RANDOM;
 } MemDados;
 
 typedef struct {
