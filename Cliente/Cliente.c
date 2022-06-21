@@ -147,11 +147,12 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	}
 	else {
 		MessageBox(hWnd, TEXT("És o Player[2], vais jogar um competitivo"), TEXT("Informaçãoo"), MB_ICONEXCLAMATION | MB_OK);
-		if (MessageBox(hWnd, TEXT("O set de pipes atualmente escolhido é o 1, deseja trocar para o segundo ?"),
+		/*if (MessageBox(hWnd, TEXT("O set de pipes atualmente escolhido é o 1, deseja trocar para o segundo ?"),
 			TEXT("PIPE SET"), MB_ICONEXCLAMATION | MB_YESNO) == IDYES)
 		{
 			dados.currentSet = 1;
 		}
+		*/
 	}
 
 		ReadFile(hPipe, &dados, sizeof(Pipe), &n, NULL);

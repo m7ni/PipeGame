@@ -92,6 +92,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	Board board;
 	Sinc sinc;
 
+	DWORD n;
 	KB.continua = &continua;
 	CONSUMER.continua = &continua;
 	TG1.continua = &continua;
@@ -261,6 +262,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 		TG2.pipeData->player = aux.player[1];
 		TG2.id = 1;
 		aux.player[1].actualSize = aux.actualSize;
+		WriteFile(TP.hPipe[1].hInstance, TP.pipeDataInitial, sizeof(Pipe), &n, NULL);
 		if ((hthread[contThread++] = CreateThread(NULL, 0, ThreadInsertPipe, &TG2, 0, NULL)) == NULL)
 		{
 			_ftprintf(stderr, TEXT("Error creating Thread responsible for thePipes\n"));
@@ -442,8 +444,11 @@ DWORD WINAPI ThreadConectClient(LPVOID param) {
 		}
 		WriteFile(data->hPipe[i].hInstance, data->pipeDataInitial, sizeof(Pipe), &n, NULL);
 
-		if (data->numPlayer == 2)
+		if (data->numPlayer == 2) {
+			
 			break;
+		}
+			
 
 
 		ret = ReadFile(data->hPipe[i].hInstance, data->pipeDataInitial, sizeof(Pipe), &n, NULL);
